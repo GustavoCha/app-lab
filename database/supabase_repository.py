@@ -309,5 +309,5 @@ class SupabaseRepository:
     def _format_in_filter(values: list[str]) -> str:
         """Encode values for a PostgREST in() filter."""
 
-        quoted = ",".join(f"\"{value}\"" for value in values)
-        return f"in.({quoted})"
+        encoded = ",".join(value for value in values)
+        return f"in.({encoded})"

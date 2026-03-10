@@ -2,11 +2,11 @@ name: Discount Alert Bot
 
 on:
   schedule:
-    - cron: "*/30 * * * *"
+    - cron: "*/10 * * * *"
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   run-bot:
@@ -30,13 +30,13 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          MIN_DISCOUNT: ${{ secrets.MIN_DISCOUNT }}
+          MAX_ALERTS_PER_RUN: ${{ secrets.MAX_ALERTS_PER_RUN }}
+          REQUEST_TIMEOUT: ${{ secrets.REQUEST_TIMEOUT }}
+          REQUEST_RETRIES: ${{ secrets.REQUEST_RETRIES }}
+          REQUIRE_IN_STOCK: ${{ secrets.REQUIRE_IN_STOCK }}
         run: python main.py
-
-      - name: Commit data updates
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/seen_products.json data/price_history.json
-          git diff --cached --quiet && exit 0
-          git commit -m "chore: update bot state"
-          git push

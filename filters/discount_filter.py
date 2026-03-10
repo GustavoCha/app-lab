@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import re
 from collections import Counter
 from typing import Iterable
 
@@ -103,13 +104,24 @@ def _matches_keyword_rules(
 
     haystack = f"{product.name} {product.normalized_name} {product.category}".lower()
 
-    if include_keywords_any and not any(keyword in haystack for keyword in include_keywords_any):
+    if include_keywords_any and not any(_keyword_matches(haystack, keyword) for keyword in include_keywords_any):
         return False
-    if include_keywords_all and not all(keyword in haystack for keyword in include_keywords_all):
+    if include_keywords_all and not all(_keyword_matches(haystack, keyword) for keyword in include_keywords_all):
         return False
-    if exclude_keywords and any(keyword in haystack for keyword in exclude_keywords):
+    if exclude_keywords and any(_keyword_matches(haystack, keyword) for keyword in exclude_keywords):
         return False
     return True
+
+
+def _keyword_matches(haystack: str, keyword: str) -> bool:
+    """Match a keyword or phrase using token boundaries."""
+
+    normalized = keyword.strip().lower()
+    if not normalized:
+        return False
+
+    pattern = r"(?<![a-z0-9])" + re.escape(normalized) + r"(?![a-z0-9])"
+    return re.search(pattern, haystack) is not None
 
 
 def sort_and_limit_products(products: Iterable[Product], limit: int) -> list[Product]:
