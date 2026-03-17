@@ -17,6 +17,7 @@ class Product:
     url: str
     store: str
     normalized_name: str
+    image_url: str = ""
     discount_percentage: float = 0.0
     score: float = 0.0
 

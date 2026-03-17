@@ -3,11 +3,30 @@
 from __future__ import annotations
 
 import math
-import re
 from collections import Counter
+from dataclasses import asdict, dataclass
 from typing import Iterable
 
 from models.product import Product
+from utils.normalization import normalize_keywords
+
+
+@dataclass(slots=True)
+class FilterStats:
+    """Counters describing why products were excluded."""
+
+    products_scanned: int = 0
+    offers_found: int = 0
+    filtered_by_category: int = 0
+    filtered_by_price: int = 0
+    filtered_by_discount: int = 0
+    filtered_by_keywords: int = 0
+    filtered_by_invalid_price: int = 0
+
+    def to_dict(self) -> dict[str, int]:
+        """Expose counters as a plain dictionary."""
+
+        return {key: int(value) for key, value in asdict(self).items()}
 
 
 def compute_discount_percentage(price_now: int, price_before: int) -> float:
@@ -61,37 +80,44 @@ def boost_cross_store_scores(products: Iterable[Product]) -> list[Product]:
 def filter_products(
     products: Iterable[Product],
     min_discount: float,
+    min_price: int,
     allowed_categories: list[str],
-    historical_min_prices: dict[str, int | None],
     include_keywords_any: list[str],
     include_keywords_all: list[str],
     exclude_keywords: list[str],
-) -> list[Product]:
-    """Keep only products that match category and real-deal criteria."""
+) -> tuple[list[Product], FilterStats]:
+    """Keep only products that match category, price, discount, and keywords."""
 
     allowed = {category.strip().lower() for category in allowed_categories}
-    include_any_terms = [term.strip().lower() for term in include_keywords_any if term.strip()]
-    include_all_terms = [term.strip().lower() for term in include_keywords_all if term.strip()]
-    exclude_terms = [term.strip().lower() for term in exclude_keywords if term.strip()]
+    include_any_terms = normalize_keywords(include_keywords_any)
+    include_all_terms = normalize_keywords(include_keywords_all)
+    exclude_terms = normalize_keywords(exclude_keywords)
     filtered: list[Product] = []
+    stats = FilterStats()
 
     for product in products:
+        stats.products_scanned += 1
+
         if product.category.lower() not in allowed:
+            stats.filtered_by_category += 1
             continue
         if product.price_before <= 0 or product.price_now <= 0:
+            stats.filtered_by_invalid_price += 1
             continue
-
-        historical_min = historical_min_prices.get(product.product_id)
-        is_new_historical_low = historical_min is None or product.price_now < historical_min
-        meets_discount = product.discount_percentage >= min_discount
-
+        if product.price_now < min_price:
+            stats.filtered_by_price += 1
+            continue
+        if product.discount_percentage < min_discount:
+            stats.filtered_by_discount += 1
+            continue
         if not _matches_keyword_rules(product, include_any_terms, include_all_terms, exclude_terms):
+            stats.filtered_by_keywords += 1
             continue
 
-        if is_new_historical_low or meets_discount:
-            filtered.append(product)
+        filtered.append(product)
 
-    return filtered
+    stats.offers_found = len(filtered)
+    return filtered, stats
 
 
 def _matches_keyword_rules(
@@ -102,11 +128,11 @@ def _matches_keyword_rules(
 ) -> bool:
     """Apply user-controlled include/exclude keyword rules."""
 
-    haystack = f"{product.name} {product.normalized_name} {product.category}".lower()
+    haystack = product.normalized_name
 
-    if include_keywords_any and not any(_keyword_matches(haystack, keyword) for keyword in include_keywords_any):
-        return False
     if include_keywords_all and not all(_keyword_matches(haystack, keyword) for keyword in include_keywords_all):
+        return False
+    if include_keywords_any and not any(_keyword_matches(haystack, keyword) for keyword in include_keywords_any):
         return False
     if exclude_keywords and any(_keyword_matches(haystack, keyword) for keyword in exclude_keywords):
         return False
@@ -114,14 +140,12 @@ def _matches_keyword_rules(
 
 
 def _keyword_matches(haystack: str, keyword: str) -> bool:
-    """Match a keyword or phrase using token boundaries."""
+    """Match normalized words or phrases against the normalized product name."""
 
-    normalized = keyword.strip().lower()
+    normalized = " ".join(keyword.strip().split())
     if not normalized:
         return False
-
-    pattern = r"(?<![a-z0-9])" + re.escape(normalized) + r"(?![a-z0-9])"
-    return re.search(pattern, haystack) is not None
+    return normalized in haystack
 
 
 def sort_and_limit_products(products: Iterable[Product], limit: int) -> list[Product]:

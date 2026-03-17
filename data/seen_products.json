@@ -1,189 +1,5 @@
 {
-  "paris:127810": {
-    "alerted_at": "2026-03-10T20:08:59.429721+00:00",
-    "discount_percentage": 56.08,
-    "name": "Bicicleta de Paseo Capressi Aro 26' Beige Mujer",
-    "price_now": 109790,
-    "product_id": "paris:127810",
-    "store": "paris",
-    "url": "https://www.paris.cl/bicicleta-de-paseo-capressi-aro-26-beige-mujer-127810.html"
-  },
-  "paris:147680": {
-    "alerted_at": "2026-03-10T20:08:57.927455+00:00",
-    "discount_percentage": 55.63,
-    "name": "Bicicleta MTB Rebel Aro 27.5' Mujer",
-    "price_now": 190790,
-    "product_id": "paris:147680",
-    "store": "paris",
-    "url": "https://www.paris.cl/bicicleta-mtb-rebel-aro-275-mujer-147680.html"
-  },
-  "paris:228280": {
-    "alerted_at": "2026-03-10T20:08:58.294188+00:00",
-    "discount_percentage": 55.02,
-    "name": "Bicicleta MTB Aro 27.5' Evolution 27.5 SX Lady",
-    "price_now": 179910,
-    "product_id": "paris:228280",
-    "store": "paris",
-    "url": "https://www.paris.cl/bicicleta-mtb-aro-275-evolution-275-sx-lady-228280.html"
-  },
-  "paris:228339": {
-    "alerted_at": "2026-03-10T20:01:58.825883+00:00",
-    "discount_percentage": 59.73,
-    "name": "Bicicleta MTB Aro 29' Evolution 29 SX",
-    "price_now": 161090,
-    "product_id": "paris:228339",
-    "store": "paris"
-  },
-  "paris:360649": {
-    "alerted_at": "2026-03-10T20:08:58.673024+00:00",
-    "discount_percentage": 54.37,
-    "name": "Bicicleta MTB Rebel Aro 29' Hombre",
-    "price_now": 196190,
-    "product_id": "paris:360649",
-    "store": "paris",
-    "url": "https://www.paris.cl/bicicleta-mtb-rebel-aro-29-hombre-360649.html"
-  },
-  "paris:360723": {
-    "alerted_at": "2026-03-10T20:09:01.324232+00:00",
-    "discount_percentage": 51.94,
-    "name": "Bicicleta MTB Limited Talla L Aro 27.5\" Unisex",
-    "price_now": 240290,
-    "product_id": "paris:360723",
-    "store": "paris",
-    "url": "https://www.paris.cl/bicicleta-mtb-limited-talla-l-aro-275-unisex-360723.html"
-  },
-  "paris:462783999": {
-    "alerted_at": "2026-03-10T20:10:01.135030+00:00",
-    "discount_percentage": 63.38,
-    "name": "Cafetera 6 Tazas",
-    "price_now": 5490,
-    "product_id": "paris:462783999",
-    "store": "paris",
-    "url": "https://www.paris.cl/cafetera-6-tazas-462783999.html"
-  },
-  "paris:560849999": {
-    "alerted_at": "2026-03-10T20:08:59.829304+00:00",
-    "discount_percentage": 70.04,
-    "name": "Botella T\u00c3\u00a9rmica Camping 1100 ml",
-    "price_now": 5990,
-    "product_id": "paris:560849999",
-    "store": "paris",
-    "url": "https://www.paris.cl/botella-termica-camping-1100-ml-560849999.html"
-  },
-  "paris:629268": {
-    "alerted_at": "2026-03-10T20:10:01.514674+00:00",
-    "discount_percentage": 66.74,
-    "name": "Polera Manga Larga Bolsillo Pecho",
-    "price_now": 2990,
-    "product_id": "paris:629268",
-    "store": "paris",
-    "url": "https://www.paris.cl/polera-manga-larga-bolsillo-pecho-629268.html"
-  },
-  "paris:744975999": {
-    "alerted_at": "2026-03-10T20:01:59.983121+00:00",
-    "discount_percentage": 52.86,
-    "name": "MacBook Air M1 8GB RAM 256GB SSD 13.3\" Space Grey MGN63BE/A Teclado Latino",
-    "price_now": 659990,
-    "product_id": "paris:744975999",
-    "store": "paris"
-  },
-  "paris:745947999": {
-    "alerted_at": "2026-03-10T20:09:59.484579+00:00",
-    "discount_percentage": 66.71,
-    "name": "Bolso de Brazo 2",
-    "price_now": 4990,
-    "product_id": "paris:745947999",
-    "store": "paris",
-    "url": "https://www.paris.cl/bolso-de-brazo-2-745947999.html"
-  },
-  "paris:750751": {
-    "alerted_at": "2026-03-10T20:10:00.338817+00:00",
-    "discount_percentage": 70.1,
-    "name": "Set Guante + Toma Olla",
-    "price_now": 2090,
-    "product_id": "paris:750751",
-    "store": "paris",
-    "url": "https://www.paris.cl/set-guante-toma-olla-750751.html"
-  },
-  "paris:840268999": {
-    "alerted_at": "2026-03-10T20:02:00.347767+00:00",
-    "discount_percentage": 63.64,
-    "name": "Microsoft 365 Personal 12 Meses 1 Usuario",
-    "price_now": 39990,
-    "product_id": "paris:840268999",
-    "store": "paris"
-  },
-  "paris:848012999": {
-    "alerted_at": "2026-03-10T20:02:00.714447+00:00",
-    "discount_percentage": 62.51,
-    "name": "Freidora de Aire 8 Litros ARF-0823DIG",
-    "price_now": 44990,
-    "product_id": "paris:848012999",
-    "store": "paris"
-  },
-  "paris:848042999": {
-    "alerted_at": "2026-03-10T20:09:58.368575+00:00",
-    "discount_percentage": 62.88,
-    "name": "Licuadora 1.5 Litros CBL-2999",
-    "price_now": 12990,
-    "product_id": "paris:848042999",
-    "store": "paris",
-    "url": "https://www.paris.cl/licuadora-15-litros-cbl-2999-848042999.html"
-  },
-  "paris:917720": {
-    "alerted_at": "2026-03-10T20:09:00.569414+00:00",
-    "discount_percentage": 70.04,
-    "name": "Polera Tripack S\u00c3\u00b3lido",
-    "price_now": 5090,
-    "product_id": "paris:917720",
-    "store": "paris",
-    "url": "https://www.paris.cl/polera-tripack-solido-917720.html"
-  },
-  "paris:917723": {
-    "alerted_at": "2026-03-10T20:09:00.949639+00:00",
-    "discount_percentage": 70.04,
-    "name": "Polera Tripack de Color S\u00c3\u00b3lido",
-    "price_now": 5090,
-    "product_id": "paris:917723",
-    "store": "paris",
-    "url": "https://www.paris.cl/polera-tripack-de-color-solido-917723.html"
-  },
-  "paris:921642": {
-    "alerted_at": "2026-03-10T20:09:58.739786+00:00",
-    "discount_percentage": 69.28,
-    "name": "Polera Rayada con Cuello",
-    "price_now": 3990,
-    "product_id": "paris:921642",
-    "store": "paris",
-    "url": "https://www.paris.cl/polera-rayada-con-cuello-921642.html"
-  },
-  "paris:924127": {
-    "alerted_at": "2026-03-10T20:01:59.579207+00:00",
-    "discount_percentage": 58.15,
-    "name": "Bicicleta MTB Sport Aro 27.5\" Unisex",
-    "price_now": 167390,
-    "product_id": "paris:924127",
-    "store": "paris"
-  },
-  "paris:933640": {
-    "alerted_at": "2026-03-10T20:08:59.042583+00:00",
-    "discount_percentage": 70.03,
-    "name": "Jeans Rectos con Bot\u00c3\u00b3n Ni\u00c3\u00b1o",
-    "price_now": 6590,
-    "product_id": "paris:933640",
-    "store": "paris",
-    "url": "https://www.paris.cl/jeans-rectos-con-boton-nino-933640.html"
-  },
-  "paris:959836": {
-    "alerted_at": "2026-03-10T20:09:59.962439+00:00",
-    "discount_percentage": 60.02,
-    "name": "Conjunto Set Tejido con Botones Lateral",
-    "price_now": 13190,
-    "product_id": "paris:959836",
-    "store": "paris",
-    "url": "https://www.paris.cl/conjunto-set-tejido-con-botones-lateral-959836.html"
-  },
-  "paris:976046999": {
+  "https://www.paris.cl/barbie-cabello-rubio-y-conjunto-rosa-976046999.html": {
     "alerted_at": "2026-03-10T20:10:00.728524+00:00",
     "discount_percentage": 60.02,
     "name": "Barbie Cabello Rubio y Conjunto Rosa",
@@ -192,16 +8,88 @@
     "store": "paris",
     "url": "https://www.paris.cl/barbie-cabello-rubio-y-conjunto-rosa-976046999.html"
   },
-  "paris:993690": {
-    "alerted_at": "2026-03-10T20:09:00.202602+00:00",
-    "discount_percentage": 70.04,
-    "name": "Pantal\u00c3\u00b3n Fluido con Cierre y Bot\u00c3\u00b3n",
-    "price_now": 5990,
-    "product_id": "paris:993690",
+  "https://www.paris.cl/bicicleta-de-paseo-capressi-aro-26-beige-mujer-127810.html": {
+    "alerted_at": "2026-03-10T20:08:59.429721+00:00",
+    "discount_percentage": 56.08,
+    "name": "Bicicleta de Paseo Capressi Aro 26' Beige Mujer",
+    "price_now": 109790,
+    "product_id": "paris:127810",
     "store": "paris",
-    "url": "https://www.paris.cl/pantalon-fluido-con-cierre-y-boton-993690.html"
+    "url": "https://www.paris.cl/bicicleta-de-paseo-capressi-aro-26-beige-mujer-127810.html"
   },
-  "paris:MK7W24QA1H": {
+  "https://www.paris.cl/bicicleta-mtb-aro-275-evolution-275-sx-lady-228280.html": {
+    "alerted_at": "2026-03-10T20:08:58.294188+00:00",
+    "discount_percentage": 55.02,
+    "name": "Bicicleta MTB Aro 27.5' Evolution 27.5 SX Lady",
+    "price_now": 179910,
+    "product_id": "paris:228280",
+    "store": "paris",
+    "url": "https://www.paris.cl/bicicleta-mtb-aro-275-evolution-275-sx-lady-228280.html"
+  },
+  "https://www.paris.cl/bicicleta-mtb-limited-talla-l-aro-275-unisex-360723.html": {
+    "alerted_at": "2026-03-10T20:09:01.324232+00:00",
+    "discount_percentage": 51.94,
+    "name": "Bicicleta MTB Limited Talla L Aro 27.5\" Unisex",
+    "price_now": 240290,
+    "product_id": "paris:360723",
+    "store": "paris",
+    "url": "https://www.paris.cl/bicicleta-mtb-limited-talla-l-aro-275-unisex-360723.html"
+  },
+  "https://www.paris.cl/bicicleta-mtb-rebel-aro-275-mujer-147680.html": {
+    "alerted_at": "2026-03-10T20:08:57.927455+00:00",
+    "discount_percentage": 55.63,
+    "name": "Bicicleta MTB Rebel Aro 27.5' Mujer",
+    "price_now": 190790,
+    "product_id": "paris:147680",
+    "store": "paris",
+    "url": "https://www.paris.cl/bicicleta-mtb-rebel-aro-275-mujer-147680.html"
+  },
+  "https://www.paris.cl/bicicleta-mtb-rebel-aro-29-hombre-360649.html": {
+    "alerted_at": "2026-03-10T20:08:58.673024+00:00",
+    "discount_percentage": 54.37,
+    "name": "Bicicleta MTB Rebel Aro 29' Hombre",
+    "price_now": 196190,
+    "product_id": "paris:360649",
+    "store": "paris",
+    "url": "https://www.paris.cl/bicicleta-mtb-rebel-aro-29-hombre-360649.html"
+  },
+  "https://www.paris.cl/bolso-de-brazo-2-745947999.html": {
+    "alerted_at": "2026-03-10T20:09:59.484579+00:00",
+    "discount_percentage": 66.71,
+    "name": "Bolso de Brazo 2",
+    "price_now": 4990,
+    "product_id": "paris:745947999",
+    "store": "paris",
+    "url": "https://www.paris.cl/bolso-de-brazo-2-745947999.html"
+  },
+  "https://www.paris.cl/botella-termica-camping-1100-ml-560849999.html": {
+    "alerted_at": "2026-03-10T20:08:59.829304+00:00",
+    "discount_percentage": 70.04,
+    "name": "Botella T\u00c3\u00a9rmica Camping 1100 ml",
+    "price_now": 5990,
+    "product_id": "paris:560849999",
+    "store": "paris",
+    "url": "https://www.paris.cl/botella-termica-camping-1100-ml-560849999.html"
+  },
+  "https://www.paris.cl/cafetera-6-tazas-462783999.html": {
+    "alerted_at": "2026-03-10T20:10:01.135030+00:00",
+    "discount_percentage": 63.38,
+    "name": "Cafetera 6 Tazas",
+    "price_now": 5490,
+    "product_id": "paris:462783999",
+    "store": "paris",
+    "url": "https://www.paris.cl/cafetera-6-tazas-462783999.html"
+  },
+  "https://www.paris.cl/conjunto-set-tejido-con-botones-lateral-959836.html": {
+    "alerted_at": "2026-03-10T20:09:59.962439+00:00",
+    "discount_percentage": 60.02,
+    "name": "Conjunto Set Tejido con Botones Lateral",
+    "price_now": 13190,
+    "product_id": "paris:959836",
+    "store": "paris",
+    "url": "https://www.paris.cl/conjunto-set-tejido-con-botones-lateral-959836.html"
+  },
+  "https://www.paris.cl/especiero-cocina-8-condimentos-giratorio-acero-inoxidable-MK7W24QA1H.html": {
     "alerted_at": "2026-03-10T20:09:59.110555+00:00",
     "discount_percentage": 65.03,
     "name": "Especiero Cocina 8 Condimentos Giratorio Acero Inoxidable",
@@ -210,39 +98,124 @@
     "store": "paris",
     "url": "https://www.paris.cl/especiero-cocina-8-condimentos-giratorio-acero-inoxidable-MK7W24QA1H.html"
   },
-  "paris:MK84JM9IBF": {
-    "alerted_at": "2026-03-10T20:02:01.083457+00:00",
-    "discount_percentage": 76.98,
-    "name": "Colador Escurridor De Silicona 29x21cm Plegable Multiuso",
+  "https://www.paris.cl/jeans-rectos-con-boton-nino-933640.html": {
+    "alerted_at": "2026-03-10T20:08:59.042583+00:00",
+    "discount_percentage": 70.03,
+    "name": "Jeans Rectos con Bot\u00c3\u00b3n Ni\u00c3\u00b1o",
+    "price_now": 6590,
+    "product_id": "paris:933640",
+    "store": "paris",
+    "url": "https://www.paris.cl/jeans-rectos-con-boton-nino-933640.html"
+  },
+  "https://www.paris.cl/licuadora-15-litros-cbl-2999-848042999.html": {
+    "alerted_at": "2026-03-10T20:09:58.368575+00:00",
+    "discount_percentage": 62.88,
+    "name": "Licuadora 1.5 Litros CBL-2999",
+    "price_now": 12990,
+    "product_id": "paris:848042999",
+    "store": "paris",
+    "url": "https://www.paris.cl/licuadora-15-litros-cbl-2999-848042999.html"
+  },
+  "https://www.paris.cl/pantalon-fluido-con-cierre-y-boton-993690.html": {
+    "alerted_at": "2026-03-10T20:09:00.202602+00:00",
+    "discount_percentage": 70.04,
+    "name": "Pantal\u00c3\u00b3n Fluido con Cierre y Bot\u00c3\u00b3n",
+    "price_now": 5990,
+    "product_id": "paris:993690",
+    "store": "paris",
+    "url": "https://www.paris.cl/pantalon-fluido-con-cierre-y-boton-993690.html"
+  },
+  "https://www.paris.cl/perfume-carolina-herrera-bad-boy-cobalt-edp-50-ml-517226999.html": {
+    "alerted_at": "2026-03-17T19:08:01.930633+00:00",
+    "discount_percentage": 50.0,
+    "name": "Perfume Carolina Herrera Bad Boy Cobalt EDP 50 ml",
+    "price_now": 100990,
+    "product_id": "paris:517226999",
+    "store": "paris",
+    "url": "https://www.paris.cl/perfume-carolina-herrera-bad-boy-cobalt-edp-50-ml-517226999.html"
+  },
+  "https://www.paris.cl/polera-manga-larga-bolsillo-pecho-629268.html": {
+    "alerted_at": "2026-03-10T20:10:01.514674+00:00",
+    "discount_percentage": 66.74,
+    "name": "Polera Manga Larga Bolsillo Pecho",
     "price_now": 2990,
-    "product_id": "paris:MK84JM9IBF",
-    "store": "paris"
+    "product_id": "paris:629268",
+    "store": "paris",
+    "url": "https://www.paris.cl/polera-manga-larga-bolsillo-pecho-629268.html"
   },
-  "paris:MKABGB31EM": {
-    "alerted_at": "2026-03-10T20:01:59.192196+00:00",
-    "discount_percentage": 68.98,
-    "name": "Sart\u00c3\u00a9n Cuadrado Antiadherente Cobre Set 4 ollas todo en uno Bfresh",
-    "price_now": 17990,
-    "product_id": "paris:MKABGB31EM",
-    "store": "paris"
+  "https://www.paris.cl/polera-rayada-con-cuello-921642.html": {
+    "alerted_at": "2026-03-10T20:09:58.739786+00:00",
+    "discount_percentage": 69.28,
+    "name": "Polera Rayada con Cuello",
+    "price_now": 3990,
+    "product_id": "paris:921642",
+    "store": "paris",
+    "url": "https://www.paris.cl/polera-rayada-con-cuello-921642.html"
   },
-  "paris:MKD3PWHUJW": {
-    "alerted_at": "2026-03-10T20:01:57.708791+00:00",
-    "discount_percentage": 66.25,
-    "name": "Apple MacBook Pro 16 \" Intel Core i7 16GB 512SSD Gris 2019 Reacondicionado",
-    "price_now": 539990,
-    "product_id": "paris:MKD3PWHUJW",
-    "store": "paris"
+  "https://www.paris.cl/polera-tripack-de-color-solido-917723.html": {
+    "alerted_at": "2026-03-10T20:09:00.949639+00:00",
+    "discount_percentage": 70.04,
+    "name": "Polera Tripack de Color S\u00c3\u00b3lido",
+    "price_now": 5090,
+    "product_id": "paris:917723",
+    "store": "paris",
+    "url": "https://www.paris.cl/polera-tripack-de-color-solido-917723.html"
   },
-  "paris:MKDJSETAN0": {
-    "alerted_at": "2026-03-10T20:01:58.457064+00:00",
-    "discount_percentage": 76.68,
-    "name": "SMARTWATCH RELOJ INTELIGENTE SERIE 6 NEGRO",
-    "price_now": 13990,
-    "product_id": "paris:MKDJSETAN0",
-    "store": "paris"
+  "https://www.paris.cl/polera-tripack-solido-917720.html": {
+    "alerted_at": "2026-03-10T20:09:00.569414+00:00",
+    "discount_percentage": 70.04,
+    "name": "Polera Tripack S\u00c3\u00b3lido",
+    "price_now": 5090,
+    "product_id": "paris:917720",
+    "store": "paris",
+    "url": "https://www.paris.cl/polera-tripack-solido-917720.html"
   },
-  "paris:MKFN8XE676": {
+  "https://www.paris.cl/samsung-galaxy-s21-fe-5g-128gb-negro-reacondicionado-MK5AGNT5XW.html": {
+    "alerted_at": "2026-03-17T19:08:00.710384+00:00",
+    "discount_percentage": 60.0,
+    "name": "Samsung Galaxy S21 FE 5G 128GB - Negro - Reacondicionado",
+    "price_now": 279990,
+    "product_id": "paris:MK5AGNT5XW",
+    "store": "paris",
+    "url": "https://www.paris.cl/samsung-galaxy-s21-fe-5g-128gb-negro-reacondicionado-MK5AGNT5XW.html"
+  },
+  "https://www.paris.cl/samsung-galaxy-s23-5g-128gb-verde-reacondicionado-MKH8THUOS8.html": {
+    "alerted_at": "2026-03-17T19:07:58.975238+00:00",
+    "discount_percentage": 63.16,
+    "name": "Samsung Galaxy S23 5G 128GB - Verde - Reacondicionado",
+    "price_now": 349990,
+    "product_id": "paris:MKH8THUOS8",
+    "store": "paris",
+    "url": "https://www.paris.cl/samsung-galaxy-s23-5g-128gb-verde-reacondicionado-MKH8THUOS8.html"
+  },
+  "https://www.paris.cl/samsung-galaxy-watch5-pro-45mm-gray-titanium-reacondicionado-MKO2O0X36H.html": {
+    "alerted_at": "2026-03-17T19:07:59.543103+00:00",
+    "discount_percentage": 62.5,
+    "name": "Samsung Galaxy Watch5 Pro 45mm - Gray Titanium - Reacondicionado",
+    "price_now": 179990,
+    "product_id": "paris:MKO2O0X36H",
+    "store": "paris",
+    "url": "https://www.paris.cl/samsung-galaxy-watch5-pro-45mm-gray-titanium-reacondicionado-MKO2O0X36H.html"
+  },
+  "https://www.paris.cl/samsung-galaxy-watch5-pro-45mm-negro-reacondicionado-MK905Y7XAS.html": {
+    "alerted_at": "2026-03-17T19:08:00.142824+00:00",
+    "discount_percentage": 62.5,
+    "name": "Samsung Galaxy Watch5 Pro 45mm - Negro - Reacondicionado",
+    "price_now": 179990,
+    "product_id": "paris:MK905Y7XAS",
+    "store": "paris",
+    "url": "https://www.paris.cl/samsung-galaxy-watch5-pro-45mm-negro-reacondicionado-MK905Y7XAS.html"
+  },
+  "https://www.paris.cl/samsung-odyssey-3d-g90xf-4k-165hz-gaming-monitor-openbox-MKQWTGKEU4.html": {
+    "alerted_at": "2026-03-17T19:08:01.325602+00:00",
+    "discount_percentage": 55.29,
+    "name": "SAMSUNG ODYSSEY 3D G90XF 4K 165HZ GAMING MONITOR OPENBOX",
+    "price_now": 759990,
+    "product_id": "paris:MKQWTGKEU4",
+    "store": "paris",
+    "url": "https://www.paris.cl/samsung-odyssey-3d-g90xf-4k-165hz-gaming-monitor-openbox-MKQWTGKEU4.html"
+  },
+  "https://www.paris.cl/set-3-moldes-redondos-reposteria-torta-antiadherente-MKFN8XE676.html": {
     "alerted_at": "2026-03-10T20:10:01.889262+00:00",
     "discount_percentage": 62.54,
     "name": "Set 3 Moldes Redondos Reposter\u00c3\u00ada Torta Antiadherente",
@@ -251,12 +224,103 @@
     "store": "paris",
     "url": "https://www.paris.cl/set-3-moldes-redondos-reposteria-torta-antiadherente-MKFN8XE676.html"
   },
+  "https://www.paris.cl/set-guante-toma-olla-750751.html": {
+    "alerted_at": "2026-03-10T20:10:00.338817+00:00",
+    "discount_percentage": 70.1,
+    "name": "Set Guante + Toma Olla",
+    "price_now": 2090,
+    "product_id": "paris:750751",
+    "store": "paris",
+    "url": "https://www.paris.cl/set-guante-toma-olla-750751.html"
+  },
+  "paris:228339": {
+    "alerted_at": "2026-03-10T20:01:58.825883+00:00",
+    "discount_percentage": 59.73,
+    "name": "Bicicleta MTB Aro 29' Evolution 29 SX",
+    "price_now": 161090,
+    "product_id": "paris:228339",
+    "store": "paris",
+    "url": "paris:228339"
+  },
+  "paris:744975999": {
+    "alerted_at": "2026-03-10T20:01:59.983121+00:00",
+    "discount_percentage": 52.86,
+    "name": "MacBook Air M1 8GB RAM 256GB SSD 13.3\" Space Grey MGN63BE/A Teclado Latino",
+    "price_now": 659990,
+    "product_id": "paris:744975999",
+    "store": "paris",
+    "url": "paris:744975999"
+  },
+  "paris:840268999": {
+    "alerted_at": "2026-03-10T20:02:00.347767+00:00",
+    "discount_percentage": 63.64,
+    "name": "Microsoft 365 Personal 12 Meses 1 Usuario",
+    "price_now": 39990,
+    "product_id": "paris:840268999",
+    "store": "paris",
+    "url": "paris:840268999"
+  },
+  "paris:848012999": {
+    "alerted_at": "2026-03-10T20:02:00.714447+00:00",
+    "discount_percentage": 62.51,
+    "name": "Freidora de Aire 8 Litros ARF-0823DIG",
+    "price_now": 44990,
+    "product_id": "paris:848012999",
+    "store": "paris",
+    "url": "paris:848012999"
+  },
+  "paris:924127": {
+    "alerted_at": "2026-03-10T20:01:59.579207+00:00",
+    "discount_percentage": 58.15,
+    "name": "Bicicleta MTB Sport Aro 27.5\" Unisex",
+    "price_now": 167390,
+    "product_id": "paris:924127",
+    "store": "paris",
+    "url": "paris:924127"
+  },
+  "paris:MK84JM9IBF": {
+    "alerted_at": "2026-03-10T20:02:01.083457+00:00",
+    "discount_percentage": 76.98,
+    "name": "Colador Escurridor De Silicona 29x21cm Plegable Multiuso",
+    "price_now": 2990,
+    "product_id": "paris:MK84JM9IBF",
+    "store": "paris",
+    "url": "paris:MK84JM9IBF"
+  },
+  "paris:MKABGB31EM": {
+    "alerted_at": "2026-03-10T20:01:59.192196+00:00",
+    "discount_percentage": 68.98,
+    "name": "Sart\u00c3\u00a9n Cuadrado Antiadherente Cobre Set 4 ollas todo en uno Bfresh",
+    "price_now": 17990,
+    "product_id": "paris:MKABGB31EM",
+    "store": "paris",
+    "url": "paris:MKABGB31EM"
+  },
+  "paris:MKD3PWHUJW": {
+    "alerted_at": "2026-03-10T20:01:57.708791+00:00",
+    "discount_percentage": 66.25,
+    "name": "Apple MacBook Pro 16 \" Intel Core i7 16GB 512SSD Gris 2019 Reacondicionado",
+    "price_now": 539990,
+    "product_id": "paris:MKD3PWHUJW",
+    "store": "paris",
+    "url": "paris:MKD3PWHUJW"
+  },
+  "paris:MKDJSETAN0": {
+    "alerted_at": "2026-03-10T20:01:58.457064+00:00",
+    "discount_percentage": 76.68,
+    "name": "SMARTWATCH RELOJ INTELIGENTE SERIE 6 NEGRO",
+    "price_now": 13990,
+    "product_id": "paris:MKDJSETAN0",
+    "store": "paris",
+    "url": "paris:MKDJSETAN0"
+  },
   "paris:MKQNP192X0": {
     "alerted_at": "2026-03-10T20:01:58.081242+00:00",
     "discount_percentage": 80.02,
     "name": "Aud\u00c3\u00adfonos Bluetooth  i3 BLANCO",
     "price_now": 9990,
     "product_id": "paris:MKQNP192X0",
-    "store": "paris"
+    "store": "paris",
+    "url": "paris:MKQNP192X0"
   }
 }

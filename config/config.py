@@ -24,12 +24,14 @@ class AppConfig:
     telegram_webhook_secret: str = ""
     cron_secret: str = ""
     min_discount: float = 60.0
+    min_price: int = 30000
     max_alerts_per_run: int = 10
     request_timeout: int = 20
     request_retries: int = 3
     require_in_stock: bool = True
-    page_size: int = 24
-    pages_per_category: int = 2
+    page_size: int = 30
+    pages_per_category: int = 5
+    best_discount_sort: str = "best-discount desc"
     watch_queries: list[str] = field(default_factory=list)
     include_keywords_any: list[str] = field(default_factory=list)
     include_keywords_all: list[str] = field(default_factory=list)
@@ -117,10 +119,15 @@ def load_config() -> AppConfig:
         telegram_webhook_secret=os.getenv("TELEGRAM_WEBHOOK_SECRET", "").strip(),
         cron_secret=os.getenv("CRON_SECRET", "").strip(),
         min_discount=float(os.getenv("MIN_DISCOUNT", "60")),
+        min_price=int(os.getenv("MIN_PRICE", "30000")),
         max_alerts_per_run=int(os.getenv("MAX_ALERTS_PER_RUN", "10")),
         request_timeout=int(os.getenv("REQUEST_TIMEOUT", "20")),
         request_retries=int(os.getenv("REQUEST_RETRIES", "3")),
         require_in_stock=_parse_bool(os.getenv("REQUIRE_IN_STOCK", "true")),
+        page_size=int(os.getenv("PAGE_SIZE", "30")),
+        pages_per_category=int(os.getenv("PAGES_PER_CATEGORY", "5")),
+        best_discount_sort=os.getenv("BEST_DISCOUNT_SORT", "best-discount desc").strip()
+        or "best-discount desc",
         watch_queries=_parse_pipe_list(os.getenv("WATCH_QUERIES", "")),
         include_keywords_any=_parse_pipe_list(os.getenv("INCLUDE_KEYWORDS_ANY", "")),
         include_keywords_all=_parse_pipe_list(os.getenv("INCLUDE_KEYWORDS_ALL", "")),

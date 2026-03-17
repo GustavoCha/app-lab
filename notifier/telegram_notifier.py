@@ -19,11 +19,18 @@ class TelegramNotifier:
         self.bot_token = bot_token
         self.default_chat_id = chat_id
         self.timeout = timeout
-        self.base_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+        self.message_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+        self.photo_url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
         self.session = requests.Session()
         self.session.trust_env = False
 
-    def send_message(self, chat_id: str, text: str, disable_preview: bool = True) -> bool:
+    def send_message(
+        self,
+        chat_id: str,
+        text: str,
+        disable_preview: bool = True,
+        reply_markup: dict[str, object] | None = None,
+    ) -> bool:
         """Send a plain Telegram message."""
 
         payload = {
@@ -31,9 +38,11 @@ class TelegramNotifier:
             "text": text,
             "disable_web_page_preview": disable_preview,
         }
+        if reply_markup:
+            payload["reply_markup"] = reply_markup
 
         try:
-            response = self.session.post(self.base_url, json=payload, timeout=self.timeout)
+            response = self.session.post(self.message_url, json=payload, timeout=self.timeout)
             response.raise_for_status()
             body = response.json()
             if not body.get("ok", False):
@@ -47,10 +56,34 @@ class TelegramNotifier:
     def send_product_alert(self, chat_id: str, product: Product, label: str = "") -> bool:
         """Send a formatted alert message for a product."""
 
+        reply_markup = {
+            "inline_keyboard": [
+                [{"text": "Ir al sitio", "url": product.url}],
+            ]
+        }
+        if product.image_url:
+            payload = {
+                "chat_id": chat_id or self.default_chat_id,
+                "photo": product.image_url,
+                "caption": self._build_message(product, label),
+                "disable_web_page_preview": True,
+                "reply_markup": reply_markup,
+            }
+            try:
+                response = self.session.post(self.photo_url, json=payload, timeout=self.timeout)
+                response.raise_for_status()
+                body = response.json()
+                if body.get("ok", False):
+                    return True
+                LOGGER.warning("Telegram sendPhoto failed, falling back to sendMessage: %s", body)
+            except requests.RequestException as exc:
+                LOGGER.warning("Telegram sendPhoto failed, falling back to sendMessage: %s", exc)
+
         return self.send_message(
             chat_id=chat_id,
             text=self._build_message(product, label),
-            disable_preview=False,
+            disable_preview=True,
+            reply_markup=reply_markup,
         )
 
     @staticmethod
@@ -62,9 +95,7 @@ class TelegramNotifier:
             f"🔥 OFERTA {int(round(product.discount_percentage))}%\n\n"
             f"{subscription_line}"
             f"Producto: {product.name}\n"
-            f"Categoria: {product.category}\n"
             f"Precio actual: ${product.price_now:,.0f}\n"
             f"Precio anterior: ${product.price_before:,.0f}\n"
-            f"Score: {product.score:.2f}\n\n"
-            f"Link:\n{product.url}"
+            f"Descuento: {int(round(product.discount_percentage))}%"
         ).replace(",", ".")

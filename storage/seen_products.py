@@ -18,84 +18,85 @@ class SeenProductsStore:
 
     def __init__(self, path: Path) -> None:
         self.path = path
+        self._cache: dict[str, dict[str, object]] | None = None
 
     def load(self) -> dict[str, dict[str, object]]:
         """Load seen product entries from disk."""
 
+        if self._cache is not None:
+            return self._cache
+
         if not self.path.exists():
-            return {}
+            self._cache = {}
+            return self._cache
 
         try:
             payload = json.loads(self.path.read_text(encoding="utf-8"))
         except (OSError, ValueError) as exc:
             LOGGER.warning("Could not read seen products file %s: %s", self.path, exc)
-            return {}
+            self._cache = {}
+            return self._cache
 
-        if isinstance(payload, dict):
-            migrated: dict[str, dict[str, object]] = {}
-            changed = False
-            for key, value in payload.items():
-                entry = value if isinstance(value, dict) else {}
-                stable_key = str(entry.get("product_id", "")).strip()
-                if not stable_key:
-                    token = _extract_legacy_product_token(key)
-                    stable_key = f"paris:{token}" if token else key
-                    if entry:
-                        entry = {**entry, "product_id": stable_key}
-                    changed = True
-                migrated[stable_key] = entry
+        if not isinstance(payload, dict):
+            self._cache = {}
+            return self._cache
 
-            if changed:
-                self.path.write_text(
-                    json.dumps(migrated, ensure_ascii=True, indent=2, sort_keys=True),
-                    encoding="utf-8",
-                )
-            return migrated
-        return {}
+        migrated: dict[str, dict[str, object]] = {}
+        changed = False
+        for key, value in payload.items():
+            entry = value if isinstance(value, dict) else {}
+            stable_key = str(entry.get("url", "")).strip() or str(key).strip()
+            if not stable_key:
+                continue
+
+            normalized_entry = {
+                "product_id": str(entry.get("product_id", "")).strip(),
+                "name": str(entry.get("name", "")).strip(),
+                "store": str(entry.get("store", "")).strip(),
+                "url": stable_key,
+                "price_now": entry.get("price_now"),
+                "discount_percentage": entry.get("discount_percentage"),
+                "alerted_at": entry.get("alerted_at"),
+            }
+            if stable_key != key or entry.get("url") != stable_key:
+                changed = True
+            migrated[stable_key] = normalized_entry
+
+        if changed:
+            self._write(migrated)
+        else:
+            self._cache = migrated
+
+        return self._cache or {}
 
     def has_seen(self, product_url: str) -> bool:
         """Check whether a product URL already triggered an alert."""
 
+        return product_url in self.load()
+
+    def has_seen_product(self, product: Product) -> bool:
+        """Check duplicates using the product URL and legacy product tokens."""
+
         seen = self.load()
-        if product_url in seen:
+        if product.url in seen:
             return True
 
-        legacy_match = _extract_legacy_product_token(product_url)
+        legacy_match = _extract_legacy_product_token(product.url)
         if not legacy_match:
             return False
 
         for key, value in seen.items():
             if legacy_match == _extract_legacy_product_token(key):
                 return True
-            if isinstance(value, dict):
-                stored_id = str(value.get("product_id", ""))
-                if stored_id.endswith(legacy_match):
-                    return True
-        return False
-
-    def has_seen_product(self, product: Product) -> bool:
-        """Check duplicates using stable product identifiers and legacy URL entries."""
-
-        seen = self.load()
-        if product.product_id in seen or product.url in seen:
-            return True
-
-        legacy_match = _extract_legacy_product_token(product.url)
-        for key, value in seen.items():
-            if key == product.product_id or key == product.url:
+            if isinstance(value, dict) and legacy_match == _extract_legacy_product_token(str(value.get("url", ""))):
                 return True
-            if legacy_match and legacy_match == _extract_legacy_product_token(key):
-                return True
-            if isinstance(value, dict):
-                if value.get("url") == product.url or value.get("product_id") == product.product_id:
-                    return True
         return False
 
     def mark_as_seen(self, product: Product) -> None:
         """Persist a sent product URL."""
 
         seen = self.load()
-        seen[product.product_id] = {
+        seen[product.url] = {
             "product_id": product.product_id,
             "name": product.name,
             "store": product.store,
@@ -104,11 +105,17 @@ class SeenProductsStore:
             "discount_percentage": product.discount_percentage,
             "alerted_at": datetime.now(timezone.utc).isoformat(),
         }
+        self._write(seen)
+
+    def _write(self, payload: dict[str, dict[str, object]]) -> None:
+        """Persist the in-memory state to disk."""
+
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.path.write_text(
-            json.dumps(seen, ensure_ascii=True, indent=2, sort_keys=True),
+            json.dumps(payload, ensure_ascii=True, indent=2, sort_keys=True),
             encoding="utf-8",
         )
+        self._cache = payload
 
 
 def _extract_legacy_product_token(value: str) -> str:

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from utils.normalization import normalize_keywords
+
 
 @dataclass(slots=True)
 class ParsedSubscriptionCommand:
@@ -34,9 +36,9 @@ def parse_watch_command(command_text: str, default_min_discount: float) -> Parse
         key, value = section.split("=", 1)
         options[key.strip().lower()] = value.strip()
 
-    include_all = _parse_csv_or_default(options.get("all"), default=query.split())
-    include_any = _parse_csv_or_default(options.get("any"), default=[])
-    exclude = _parse_csv_or_default(options.get("exclude"), default=[])
+    include_all = normalize_keywords(_parse_csv_or_default(options.get("all"), default=query.split()))
+    include_any = normalize_keywords(_parse_csv_or_default(options.get("any"), default=[]))
+    exclude = normalize_keywords(_parse_csv_or_default(options.get("exclude"), default=[]))
     label = options.get("label", query).strip() or query
     min_discount = float(options.get("min", default_min_discount))
     require_in_stock = options.get("stock", "true").strip().lower() not in {"0", "false", "no"}
@@ -47,8 +49,8 @@ def parse_watch_command(command_text: str, default_min_discount: float) -> Parse
         min_discount=min_discount,
         require_in_stock=require_in_stock,
         include_keywords_any=include_any,
-        include_keywords_all=[token.lower() for token in include_all],
-        exclude_keywords=[token.lower() for token in exclude],
+        include_keywords_all=include_all,
+        exclude_keywords=exclude,
     )
 
 

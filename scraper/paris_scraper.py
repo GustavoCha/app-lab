@@ -7,14 +7,14 @@ import json
 import logging
 import re
 from typing import Any
-from urllib.parse import quote_plus, urljoin
+from urllib.parse import parse_qsl, quote_plus, urlencode, urljoin, urlsplit, urlunsplit
 
 import requests
 from bs4 import BeautifulSoup
 
 from config.config import AppConfig
 from models.product import Product
-from utils.normalization import normalize_product_name
+from utils.normalization import fix_text_encoding, normalize_product_name
 
 
 LOGGER = logging.getLogger(__name__)
@@ -76,58 +76,96 @@ class ParisScraper:
     def _scrape_search_query(self, query: str) -> list[Product]:
         """Scrape products for a specific free-text search query."""
 
-        page_url = f"{self.BASE_URL}/search/?q={quote_plus(query)}"
-        html = self._fetch(page_url)
-        if not html:
-            return []
+        products: dict[str, Product] = {}
+        for page_number in range(1, self.config.pages_per_category + 1):
+            page_url = self._build_search_url(query, page_number)
+            html = self._fetch(page_url)
+            if not html:
+                continue
 
-        products = self._parse_next_data_products(html, "custom")
-        LOGGER.info("Search query '%s': parsed %s products", query, len(products))
-        return products
+            page_products = self._parse_constructor_cards(html, page_url, "custom")
+            if not page_products:
+                page_products = self._parse_next_data_products(html, "custom")
+            if not page_products:
+                api_products: dict[str, Product] = {}
+                for api_url in self._discover_api_urls(html, page_url):
+                    for product in self._parse_api_products(api_url, "custom"):
+                        api_products[product.url] = product
+                html_products = self._parse_html_products(html, page_url, "custom")
+                page_products = list(api_products.values()) + html_products
+
+            unique_page_products = 0
+            for product in page_products:
+                if product.url not in products:
+                    unique_page_products += 1
+                products[product.url] = product
+
+            LOGGER.info(
+                "Search query '%s': page %s scanned, %s products found",
+                query,
+                page_number,
+                len(page_products),
+            )
+
+            if not page_products or unique_page_products == 0:
+                break
+
+        LOGGER.info(
+            "Search query '%s': scraped %s unique products using sort=%s",
+            query,
+            len(products),
+            self.config.best_discount_sort,
+        )
+        return self._sort_products_by_discount(products.values())
 
     def _scrape_category(self, category: str) -> list[Product]:
         """Scrape a single category with resilient fallbacks."""
 
         urls = list(self.config.category_urls.get(category, []))
         search_query = self.config.search_query_by_category.get(category, category)
-        search_url = f"{self.BASE_URL}/search/?q={search_query}"
+        search_url = self._build_search_url(search_query, 1)
         if search_url not in urls:
             urls.insert(0, search_url)
         products: dict[str, Product] = {}
 
         for base_url in urls:
-            for page_number in range(self.config.pages_per_category):
+            for page_number in range(1, self.config.pages_per_category + 1):
                 page_url = self._build_paged_url(base_url, page_number)
                 html = self._fetch(page_url)
                 if not html:
                     continue
 
-                next_data_products = self._parse_next_data_products(html, category)
-                for product in next_data_products:
+                constructor_products = self._parse_constructor_cards(html, page_url, category)
+                next_data_products = self._parse_next_data_products(html, category) if not constructor_products else []
+                api_products: dict[str, Product] = {}
+                if not constructor_products and not next_data_products:
+                    for api_url in self._discover_api_urls(html, page_url):
+                        for product in self._parse_api_products(api_url, category):
+                            api_products[product.url] = product
+                html_products = (
+                    self._parse_html_products(html, page_url, category)
+                    if not constructor_products and not next_data_products
+                    else []
+                )
+                page_products = constructor_products + next_data_products + list(api_products.values()) + html_products
+                for product in page_products:
                     products[product.url] = product
-                if next_data_products:
-                    LOGGER.info(
-                        "Category '%s': parsed %s products from Next.js flight data",
-                        category,
-                        len(next_data_products),
-                    )
-                    return list(products.values())
 
-                for api_url in self._discover_api_urls(html, page_url):
-                    for product in self._parse_api_products(api_url, category):
-                        products[product.url] = product
-                if products:
-                    LOGGER.info("Category '%s': parsed from API strategy", category)
-                    return list(products.values())
+                LOGGER.info(
+                    "Category '%s': page %s scanned, %s products found",
+                    category,
+                    page_number,
+                    len(page_products),
+                )
 
-                for product in self._parse_html_products(html, page_url, category):
-                    products[product.url] = product
+                if not page_products:
+                    break
 
             if products:
                 break
 
         LOGGER.info("Category '%s': scraped %s products", category, len(products))
-        return list(products.values())
+        return self._sort_products_by_discount(products.values())
 
     def _parse_next_data_products(self, html: str, category: str) -> list[Product]:
         """Extract products from the Next.js flight data embedded in the page."""
@@ -169,6 +207,7 @@ class ParisScraper:
             url = f"{self.BASE_URL}/{slug}.html"
         elif key:
             url = f"{self.BASE_URL}/{key}.html"
+        image_url = self._extract_image_url_from_mapping(data)
 
         category_name = self._map_category(category, str(data.get("productType", {}).get("key", "")))
         return self._build_product(
@@ -178,16 +217,29 @@ class ParisScraper:
             price_before=int(regular_price) if isinstance(regular_price, int) else 0,
             category=category_name,
             url=url,
+            image_url=image_url,
+        )
+
+    def _build_search_url(self, query: str, page_number: int) -> str:
+        """Build a search URL with pagination and best-discount sorting."""
+
+        return self._merge_query_params(
+            f"{self.BASE_URL}/search/?q={quote_plus(query)}",
+            {
+                "q": query,
+                "page": str(page_number),
+            },
         )
 
     def _build_paged_url(self, base_url: str, page_number: int) -> str:
-        """Build a category page URL with simple pagination heuristics."""
+        """Build a category page URL with pagination and sorting applied."""
 
-        if page_number == 0:
-            return base_url
-        separator = "&" if "?" in base_url else "?"
-        start = page_number * self.config.page_size
-        return f"{base_url}{separator}start={start}&sz={self.config.page_size}"
+        return self._merge_query_params(
+            base_url,
+            {
+                "page": str(page_number),
+            },
+        )
 
     def _fetch(self, url: str) -> str | None:
         """Fetch a page with retry logic."""
@@ -294,6 +346,19 @@ class ParisScraper:
 
         return list(products.values())
 
+    def _parse_constructor_cards(self, html: str, page_url: str, category: str) -> list[Product]:
+        """Parse server-rendered product cards used by the live Paris search pages."""
+
+        soup = BeautifulSoup(html, "html.parser")
+        products: dict[str, Product] = {}
+
+        for node in soup.select("[data-cnstrc-item-id]"):
+            product = self._product_from_constructor_card(node, page_url, category)
+            if product:
+                products[product.url] = product
+
+        return list(products.values())
+
     def _product_from_json_ld(self, raw_json: str, category: str) -> Product | None:
         """Build a product from JSON-LD blocks."""
 
@@ -325,6 +390,8 @@ class ParisScraper:
         if name_node:
             name = name_node.get("title") or name_node.get_text(" ", strip=True)
         url = urljoin(page_url, link_node.get("href", "")) if link_node else ""
+        image_node = node.select_one("img[src], img[data-src], img[srcset]")
+        image_url = self._extract_image_url_from_img(image_node, page_url)
         price_now = self._parse_price(
             (price_now_node.get("data-price") if price_now_node else "")
             or (price_now_node.get_text(" ", strip=True) if price_now_node else "")
@@ -341,6 +408,47 @@ class ParisScraper:
             price_before=price_before,
             category=category,
             url=url,
+            image_url=image_url,
+        )
+
+    def _product_from_constructor_card(self, node: Any, page_url: str, category: str) -> Product | None:
+        """Build a product from Paris server-rendered Constructor cards."""
+
+        product_id = str(node.get("data-cnstrc-item-id", "")).strip()
+        name = str(node.get("data-cnstrc-item-name", "")).strip()
+        link_node = node.select_one("a[href]")
+        url = urljoin(page_url, link_node.get("href", "")) if link_node else ""
+        image_node = node.select_one("img[src], img[data-src], img[srcset]")
+        image_url = self._extract_image_url_from_img(image_node, page_url)
+
+        current_price = 0
+        previous_price = 0
+        price_blocks = node.select("[data-testid='paris-pod-price']")
+        if price_blocks:
+            current_candidates = self._extract_display_prices(price_blocks[0].get_text(" ", strip=True))
+            if current_candidates:
+                current_price = current_candidates[-1]
+        if len(price_blocks) > 1:
+            previous_candidates = self._extract_display_prices(price_blocks[-1].get_text(" ", strip=True))
+            if previous_candidates:
+                previous_price = previous_candidates[-1]
+
+        if current_price <= 0:
+            current_price = self._parse_price(node.get("data-cnstrc-item-price"))
+        if previous_price <= 0 or previous_price <= current_price:
+            previous_price = max(self._extract_price_candidates(node.get_text(" ", strip=True)), default=0)
+
+        if current_price <= 0 or previous_price <= 0:
+            return None
+
+        return self._build_product(
+            product_id=f"{self.STORE_NAME}:{product_id or url or name}",
+            name=name,
+            price_now=current_price,
+            price_before=previous_price,
+            category=category,
+            url=url,
+            image_url=image_url,
         )
 
     def _product_from_mapping(self, data: dict[str, Any], category: str) -> Product | None:
@@ -423,11 +531,13 @@ class ParisScraper:
         price_before: int,
         category: str,
         url: str,
+        image_url: str = "",
     ) -> Product | None:
         """Validate and build a product object."""
 
-        cleaned_name = name.strip()
+        cleaned_name = fix_text_encoding(name).strip()
         cleaned_url = urljoin(self.BASE_URL, url).strip() if url else ""
+        cleaned_image_url = urljoin(self.BASE_URL, image_url).strip() if image_url else ""
         resolved_category = category.strip().lower() if category else "sin-categoria"
 
         if not cleaned_name or not cleaned_url:
@@ -446,7 +556,67 @@ class ParisScraper:
             url=cleaned_url,
             store=self.STORE_NAME,
             normalized_name=normalize_product_name(cleaned_name),
+            image_url=cleaned_image_url,
         )
+
+    def _extract_image_url_from_mapping(self, data: dict[str, Any]) -> str:
+        """Extract a best-effort image URL from a structured payload."""
+
+        candidates: list[Any] = [
+            data.get("image"),
+            data.get("imageUrl"),
+            data.get("image_url"),
+        ]
+
+        master_variant = data.get("masterVariant")
+        if isinstance(master_variant, dict):
+            candidates.append(master_variant.get("images"))
+
+        for candidate in candidates:
+            image_url = self._extract_image_candidate(candidate)
+            if image_url:
+                return image_url
+        return ""
+
+    def _extract_image_candidate(self, candidate: Any) -> str:
+        """Normalize image payloads from several shapes into a single URL."""
+
+        if isinstance(candidate, str) and candidate.strip():
+            return candidate.strip()
+        if isinstance(candidate, dict):
+            for key in ("url", "src", "imageUrl", "link"):
+                value = candidate.get(key)
+                if isinstance(value, str) and value.strip():
+                    return value.strip()
+        if isinstance(candidate, list):
+            for item in candidate:
+                image_url = self._extract_image_candidate(item)
+                if image_url:
+                    return image_url
+        return ""
+
+    def _extract_image_url_from_img(self, node: Any, page_url: str) -> str:
+        """Extract an image URL from an HTML img tag."""
+
+        if not node:
+            return ""
+
+        src = str(node.get("src") or node.get("data-src") or "").strip()
+        if not src:
+            srcset = str(node.get("srcset") or "").strip()
+            if srcset:
+                src = srcset.split(",", 1)[0].strip().split(" ", 1)[0]
+
+        return urljoin(page_url, src) if src else ""
+
+    @staticmethod
+    def _merge_query_params(url: str, updates: dict[str, str]) -> str:
+        """Merge URL query params while preserving the original path."""
+
+        parts = urlsplit(url)
+        params = dict(parse_qsl(parts.query, keep_blank_values=True))
+        params.update({key: value for key, value in updates.items() if value})
+        return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(params), parts.fragment))
 
     @staticmethod
     def _first_string(data: dict[str, Any], keys: list[str]) -> str:
@@ -469,6 +639,32 @@ class ParisScraper:
 
         digits = re.sub(r"[^\d]", "", str(value))
         return int(digits) if digits else 0
+
+    @classmethod
+    def _extract_price_candidates(cls, value: str) -> list[int]:
+        """Extract every price-looking token from a text block."""
+
+        return [cls._parse_price(match) for match in re.findall(r"\$\s*[\d\.\,]+", value or "")]
+
+    @classmethod
+    def _extract_display_prices(cls, value: str) -> list[int]:
+        """Extract prices that belong to the main display, excluding unit-price text in parentheses."""
+
+        cleaned = re.sub(r"\([^)]*\)", " ", value or "")
+        return cls._extract_price_candidates(cleaned)
+
+    @staticmethod
+    def _sort_products_by_discount(products: Any) -> list[Product]:
+        """Return products sorted by highest discount, then by highest previous price."""
+
+        return sorted(
+            list(products),
+            key=lambda product: (
+                ((product.price_before - product.price_now) / product.price_before) if product.price_before else 0,
+                product.price_before,
+            ),
+            reverse=True,
+        )
 
     @staticmethod
     def _map_category(default_category: str, discovered_category: str) -> str:
