@@ -109,7 +109,7 @@ class SupabaseRepository:
     def delete_subscription(self, user_id: str, subscription_id: int) -> bool:
         """Delete one subscription owned by a user."""
 
-        self._request(
+        rows = self._request(
             "DELETE",
             "subscriptions",
             params={
@@ -119,7 +119,58 @@ class SupabaseRepository:
             },
             prefer="return=representation",
         )
-        return True
+        return bool(rows)
+
+    def get_conversation_state(self, user_id: str) -> dict[str, object]:
+        """Return the active conversation state for a user, if any."""
+
+        rows = self._request(
+            "GET",
+            "conversation_states",
+            params={
+                "user_id": f"eq.{user_id}",
+                "select": "*",
+            },
+        )
+        return rows[0] if rows else {}
+
+    def upsert_conversation_state(
+        self,
+        user_id: str,
+        flow: str,
+        step: str,
+        payload: dict[str, object] | None = None,
+    ) -> dict[str, object]:
+        """Create or update a user conversation state."""
+
+        rows = self._request(
+            "POST",
+            "conversation_states",
+            params={"on_conflict": "user_id", "select": "*"},
+            json_body=[
+                {
+                    "user_id": user_id,
+                    "flow": flow,
+                    "step": step,
+                    "payload": payload or {},
+                }
+            ],
+            prefer="resolution=merge-duplicates,return=representation",
+        )
+        return rows[0] if rows else {}
+
+    def clear_conversation_state(self, user_id: str) -> None:
+        """Delete the conversation state for a user."""
+
+        self._request(
+            "DELETE",
+            "conversation_states",
+            params={
+                "user_id": f"eq.{user_id}",
+                "select": "user_id",
+            },
+            prefer="return=representation",
+        )
 
     def get_active_subscriptions(self) -> list[Subscription]:
         """Load all subscriptions for active users."""

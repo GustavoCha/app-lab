@@ -26,7 +26,14 @@ Bot multiusuario para detectar ofertas en `paris.cl` y enviar alertas personaliz
 - prevencion de duplicados por usuario y suscripcion
 - historial de precios en base de datos
 
-## Comandos de Telegram
+## Uso en Telegram
+
+Flujo principal:
+
+- menu persistente con `Agregar alerta`, `Ver mis alertas`, `Eliminar alerta`, `Ayuda`
+- alta guiada paso a paso para no tener que escribir comandos complejos
+
+## Comandos de respaldo
 
 - `/start`
 - `/help`

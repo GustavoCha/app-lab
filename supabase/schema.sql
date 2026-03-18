@@ -60,6 +60,15 @@ create table if not exists public.sent_alerts (
     unique (user_id, subscription_id, product_id)
 );
 
+create table if not exists public.conversation_states (
+    user_id uuid primary key references public.users(id) on delete cascade,
+    flow text not null,
+    step text not null,
+    payload jsonb not null default '{}'::jsonb,
+    created_at timestamptz not null default timezone('utc', now()),
+    updated_at timestamptz not null default timezone('utc', now())
+);
+
 create index if not exists idx_subscriptions_user_enabled
     on public.subscriptions(user_id, enabled);
 
@@ -68,6 +77,9 @@ create index if not exists idx_price_history_product_captured
 
 create index if not exists idx_sent_alerts_lookup
     on public.sent_alerts(user_id, subscription_id, sent_at desc);
+
+create index if not exists idx_conversation_states_flow
+    on public.conversation_states(flow, updated_at desc);
 
 create or replace function public.set_updated_at()
 returns trigger
@@ -87,4 +99,9 @@ for each row execute function public.set_updated_at();
 drop trigger if exists trg_subscriptions_updated_at on public.subscriptions;
 create trigger trg_subscriptions_updated_at
 before update on public.subscriptions
+for each row execute function public.set_updated_at();
+
+drop trigger if exists trg_conversation_states_updated_at on public.conversation_states;
+create trigger trg_conversation_states_updated_at
+before update on public.conversation_states
 for each row execute function public.set_updated_at();

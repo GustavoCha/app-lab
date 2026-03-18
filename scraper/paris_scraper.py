@@ -228,6 +228,7 @@ class ParisScraper:
             {
                 "q": query,
                 "page": str(page_number),
+                "srule": self.config.best_discount_sort,
             },
         )
 
@@ -238,6 +239,7 @@ class ParisScraper:
             base_url,
             {
                 "page": str(page_number),
+                "srule": self.config.best_discount_sort,
             },
         )
 

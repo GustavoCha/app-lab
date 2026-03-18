@@ -74,7 +74,8 @@ def build_help_text() -> str:
     """Return Telegram help text."""
 
     return (
-        "Comandos disponibles:\n\n"
+        "Usa el menu del bot para agregar, listar o eliminar alertas.\n\n"
+        "Si prefieres, tambien puedes usar estos comandos:\n\n"
         "/watch <busqueda>\n"
         "Ejemplo: /watch televisor oled | min=25 | exclude=soporte,cable\n\n"
         "/list\n"

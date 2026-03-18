@@ -18,7 +18,6 @@ from models.product import Product
 from models.subscription import Subscription
 from notifier.telegram_notifier import TelegramNotifier
 from scraper.paris_scraper import ParisScraper
-from storage.seen_products import SeenProductsStore
 
 
 LOGGER = logging.getLogger(__name__)
@@ -38,7 +37,6 @@ def run_alert_cycle(config: AppConfig) -> dict[str, int]:
     repository = SupabaseRepository(config)
     notifier = TelegramNotifier(bot_token=config.telegram_bot_token, timeout=config.request_timeout)
     scraper = ParisScraper(config)
-    seen_store = SeenProductsStore(config.seen_products_path)
 
     subscriptions = repository.get_active_subscriptions()
     if not subscriptions:
@@ -93,9 +91,6 @@ def run_alert_cycle(config: AppConfig) -> dict[str, int]:
             if product.discount_percentage < subscription.min_discount:
                 aggregate_filter_stats.filtered_by_discount += 1
                 continue
-            if seen_store.has_seen_product(product):
-                duplicates_skipped += 1
-                continue
             if product.product_id not in availability_cache:
                 availability_cache[product.product_id] = scraper.get_product_page_state(product.url)
             page_available, in_stock = availability_cache[product.product_id]
@@ -117,24 +112,18 @@ def run_alert_cycle(config: AppConfig) -> dict[str, int]:
     )
 
     offers_found = len(ranked_alerts)
-    sent_urls: set[str] = set()
     for candidate in ranked_alerts:
         if alerts_sent >= config.max_alerts_per_run:
             break
 
         subscription = candidate.subscription
         product = candidate.product
-        if product.url in sent_urls or seen_store.has_seen_product(product):
-            duplicates_skipped += 1
-            continue
         if product.discount_percentage < subscription.min_discount:
             aggregate_filter_stats.filtered_by_discount += 1
             continue
 
         if notifier.send_product_alert(subscription.telegram_chat_id, product, subscription.label):
             repository.record_sent_alert(subscription.user_id, subscription.id, product)
-            seen_store.mark_as_seen(product)
-            sent_urls.add(product.url)
             alerts_sent += 1
 
     repository.persist_products(
