@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from collections import Counter
+from collections import Counter, defaultdict, deque
 from dataclasses import asdict, dataclass
 from typing import Iterable
 
@@ -279,8 +279,36 @@ def sort_and_limit_products(products: Iterable[Product], limit: int) -> list[Pro
         for product in products_list
     ]
 
-    return sorted(
+    ranked = sorted(
         rescored,
         key=lambda item: (item.score, item.discount_percentage, item.price_before),
         reverse=True,
-    )[:limit]
+    )
+    return _interleave_by_store(ranked, limit)
+
+
+def _interleave_by_store(products: list[Product], limit: int) -> list[Product]:
+    """Mix stores fairly so one source does not consume every top slot."""
+
+    buckets: dict[str, deque[Product]] = defaultdict(deque)
+    store_order: list[str] = []
+    for product in products:
+        if product.store not in buckets:
+            store_order.append(product.store)
+        buckets[product.store].append(product)
+
+    mixed: list[Product] = []
+    while store_order and len(mixed) < limit:
+        next_round: list[str] = []
+        for store in store_order:
+            bucket = buckets[store]
+            if not bucket:
+                continue
+            mixed.append(bucket.popleft())
+            if bucket:
+                next_round.append(store)
+            if len(mixed) >= limit:
+                break
+        store_order = next_round
+
+    return mixed
