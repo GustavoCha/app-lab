@@ -130,14 +130,18 @@ def run_alert_cycle(config: AppConfig) -> dict[str, int]:
     )
 
     offers_found = len(ranked_alerts)
-    alerts_sent_by_user: dict[str, int] = defaultdict(int)
+    alerts_sent_by_user_store: dict[tuple[str, str], int] = defaultdict(int)
     for candidate in ranked_alerts:
         if alerts_sent >= config.max_alerts_per_run:
             break
 
         subscription = candidate.subscription
         product = candidate.product
-        if alerts_sent_by_user[subscription.user_id] >= config.max_alerts_per_user_per_run:
+        user_store_key = (subscription.user_id, product.store)
+        if (
+            alerts_sent_by_user_store[user_store_key]
+            >= config.max_alerts_per_user_per_store_per_run
+        ):
             continue
         if product.discount_percentage < subscription.min_discount:
             aggregate_filter_stats.filtered_by_discount += 1
@@ -146,7 +150,7 @@ def run_alert_cycle(config: AppConfig) -> dict[str, int]:
         if notifier.send_product_alert(subscription.telegram_chat_id, product, subscription.label):
             repository.record_sent_alert(subscription.user_id, subscription.id, product)
             alerts_sent += 1
-            alerts_sent_by_user[subscription.user_id] += 1
+            alerts_sent_by_user_store[user_store_key] += 1
 
     repository.persist_products(
         products=list(all_products_by_id.values()),
