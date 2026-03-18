@@ -25,7 +25,8 @@ class AppConfig:
     cron_secret: str = ""
     min_discount: float = 60.0
     min_price: int = 30000
-    max_alerts_per_run: int = 10
+    max_alerts_per_run: int = 100
+    max_alerts_per_user_per_run: int = 5
     request_timeout: int = 20
     request_retries: int = 3
     require_in_stock: bool = True
@@ -120,7 +121,8 @@ def load_config() -> AppConfig:
         cron_secret=os.getenv("CRON_SECRET", "").strip(),
         min_discount=float(os.getenv("MIN_DISCOUNT", "60")),
         min_price=int(os.getenv("MIN_PRICE", "30000")),
-        max_alerts_per_run=int(os.getenv("MAX_ALERTS_PER_RUN", "10")),
+        max_alerts_per_run=int(os.getenv("MAX_ALERTS_PER_RUN", "100")),
+        max_alerts_per_user_per_run=int(os.getenv("MAX_ALERTS_PER_USER_PER_RUN", "5")),
         request_timeout=int(os.getenv("REQUEST_TIMEOUT", "20")),
         request_retries=int(os.getenv("REQUEST_RETRIES", "3")),
         require_in_stock=_parse_bool(os.getenv("REQUIRE_IN_STOCK", "true")),
