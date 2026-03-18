@@ -250,7 +250,7 @@ class TelegramBotService:
                 min_discount=float(payload.get("min_discount") or self.config.min_discount),
                 require_in_stock=self.config.require_in_stock,
                 include_keywords_any=[],
-                include_keywords_all=str(payload.get("query") or "").strip().split(),
+                include_keywords_all=[],
                 exclude_keywords=exclude_keywords,
             )
             self.repository.clear_conversation_state(user_id)

@@ -42,7 +42,11 @@ class ParisScraper:
         self.session.headers.update(
             {
                 "User-Agent": self.USER_AGENT,
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
                 "Accept-Language": "es-CL,es;q=0.9,en;q=0.8",
+                "Cache-Control": "no-cache",
+                "Pragma": "no-cache",
+                "Upgrade-Insecure-Requests": "1",
             }
         )
 
@@ -78,9 +82,14 @@ class ParisScraper:
 
         products: dict[str, Product] = {}
         for page_number in range(1, self.config.pages_per_category + 1):
-            page_url = self._build_search_url(query, page_number)
-            html = self._fetch(page_url)
-            if not html:
+            page_url = ""
+            html = None
+            for candidate_url in self._build_search_urls(query, page_number):
+                page_url = candidate_url
+                html = self._fetch(candidate_url)
+                if html:
+                    break
+            if not html or not page_url:
                 continue
 
             page_products = self._parse_constructor_cards(html, page_url, "custom")
@@ -123,16 +132,21 @@ class ParisScraper:
 
         urls = list(self.config.category_urls.get(category, []))
         search_query = self.config.search_query_by_category.get(category, category)
-        search_url = self._build_search_url(search_query, 1)
-        if search_url not in urls:
-            urls.insert(0, search_url)
+        for search_url in reversed(self._build_search_urls(search_query, 1)):
+            if search_url not in urls:
+                urls.insert(0, search_url)
         products: dict[str, Product] = {}
 
         for base_url in urls:
             for page_number in range(1, self.config.pages_per_category + 1):
-                page_url = self._build_paged_url(base_url, page_number)
-                html = self._fetch(page_url)
-                if not html:
+                page_url = ""
+                html = None
+                for candidate_url in self._build_paged_urls(base_url, page_number):
+                    page_url = candidate_url
+                    html = self._fetch(candidate_url)
+                    if html:
+                        break
+                if not html or not page_url:
                     continue
 
                 constructor_products = self._parse_constructor_cards(html, page_url, category)
@@ -220,35 +234,67 @@ class ParisScraper:
             image_url=image_url,
         )
 
-    def _build_search_url(self, query: str, page_number: int) -> str:
-        """Build a search URL with pagination and best-discount sorting."""
+    def _build_search_urls(self, query: str, page_number: int) -> list[str]:
+        """Build candidate search URLs, preferring the most compatible variant first."""
 
-        return self._merge_query_params(
-            f"{self.BASE_URL}/search/?q={quote_plus(query)}",
-            {
-                "q": query,
-                "page": str(page_number),
-                "srule": self.config.best_discount_sort,
-            },
-        )
+        base = f"{self.BASE_URL}/search/?q={quote_plus(query)}"
+        urls = [
+            self._merge_query_params(
+                base,
+                {
+                    "q": query,
+                    "page": str(page_number),
+                },
+            )
+        ]
+        if self.config.best_discount_sort:
+            urls.append(
+                self._merge_query_params(
+                    base,
+                    {
+                        "q": query,
+                        "page": str(page_number),
+                        "srule": self.config.best_discount_sort,
+                    },
+                )
+            )
+        return urls
 
-    def _build_paged_url(self, base_url: str, page_number: int) -> str:
-        """Build a category page URL with pagination and sorting applied."""
+    def _build_paged_urls(self, base_url: str, page_number: int) -> list[str]:
+        """Build candidate category URLs with and without explicit sorting."""
 
-        return self._merge_query_params(
-            base_url,
-            {
-                "page": str(page_number),
-                "srule": self.config.best_discount_sort,
-            },
-        )
+        urls = [
+            self._merge_query_params(
+                base_url,
+                {
+                    "page": str(page_number),
+                },
+            )
+        ]
+        if self.config.best_discount_sort:
+            urls.append(
+                self._merge_query_params(
+                    base_url,
+                    {
+                        "page": str(page_number),
+                        "srule": self.config.best_discount_sort,
+                    },
+                )
+            )
+        return urls
 
     def _fetch(self, url: str) -> str | None:
         """Fetch a page with retry logic."""
 
         for attempt in range(1, self.config.request_retries + 1):
             try:
-                response = self.session.get(url, timeout=self.config.request_timeout)
+                response = self.session.get(
+                    url,
+                    timeout=self.config.request_timeout,
+                    headers={
+                        "Referer": f"{self.BASE_URL}/",
+                    },
+                )
                 response.raise_for_status()
                 return response.text
             except requests.RequestException as exc:
@@ -291,7 +337,14 @@ class ParisScraper:
         """Attempt to parse products from a discovered JSON endpoint."""
 
         try:
-            response = self.session.get(api_url, timeout=self.config.request_timeout)
+            response = self.session.get(
+                api_url,
+                timeout=self.config.request_timeout,
+                headers={
+                    "Referer": f"{self.BASE_URL}/",
+                    "Accept": "application/json,text/plain,*/*",
+                },
+            )
             response.raise_for_status()
             payload = response.json()
         except (requests.RequestException, ValueError):
