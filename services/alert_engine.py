@@ -18,6 +18,7 @@ from filters.discount_filter import (
 from models.product import Product
 from models.subscription import Subscription
 from notifier.telegram_notifier import TelegramNotifier
+from scraper.lider_scraper import LiderScraper
 from scraper.paris_scraper import ParisScraper
 
 
@@ -37,7 +38,10 @@ def run_alert_cycle(config: AppConfig) -> dict[str, int]:
 
     repository = SupabaseRepository(config)
     notifier = TelegramNotifier(bot_token=config.telegram_bot_token, timeout=config.request_timeout)
-    scraper = ParisScraper(config)
+    scrapers = {
+        "paris": ParisScraper(config),
+        "lider": LiderScraper(config),
+    }
 
     subscriptions = repository.get_active_subscriptions()
     if not subscriptions:
@@ -58,7 +62,10 @@ def run_alert_cycle(config: AppConfig) -> dict[str, int]:
     aggregate_filter_stats = FilterStats()
 
     for query in queries:
-        products = boost_cross_store_scores(enrich_products(scraper._scrape_search_query(query)))
+        query_products: list[Product] = []
+        for scraper in scrapers.values():
+            query_products.extend(scraper._scrape_search_query(query))
+        products = boost_cross_store_scores(enrich_products(query_products))
         products_by_query[query] = products
         for product in products:
             all_products_by_id[product.product_id] = product
@@ -94,7 +101,10 @@ def run_alert_cycle(config: AppConfig) -> dict[str, int]:
                 aggregate_filter_stats.filtered_by_discount += 1
                 continue
             if product.product_id not in availability_cache:
-                availability_cache[product.product_id] = scraper.get_product_page_state(product.url)
+                store_scraper = scrapers.get(product.store)
+                if not store_scraper:
+                    continue
+                availability_cache[product.product_id] = store_scraper.get_product_page_state(product.url)
             page_available, in_stock = availability_cache[product.product_id]
             if not page_available:
                 continue
