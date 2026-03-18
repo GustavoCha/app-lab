@@ -118,6 +118,12 @@ class LiderScraper:
         price_before = self._parse_price(price_info.get("wasPrice") or price_info.get("itemPrice"))
         category = self._extract_category(item.get("category"))
         product_id = str(item.get("usItemId") or item.get("id") or full_url).strip()
+        availability = item.get("availabilityStatusV2") or {}
+        availability_value = ""
+        if isinstance(availability, dict):
+            availability_value = str(availability.get("value") or "").strip().upper()
+        can_add_to_cart = bool(item.get("canAddToCart", False))
+        in_stock_hint = availability_value == "IN_STOCK" or can_add_to_cart
 
         return self._build_product(
             product_id=f"{self.STORE_NAME}:{product_id}",
@@ -127,6 +133,8 @@ class LiderScraper:
             category=category,
             url=full_url,
             image_url=image_url,
+            page_available_hint=True,
+            in_stock_hint=in_stock_hint,
         )
 
     def _build_search_url(self, query: str) -> str:
@@ -217,6 +225,8 @@ class LiderScraper:
         category: str,
         url: str,
         image_url: str = "",
+        page_available_hint: bool | None = None,
+        in_stock_hint: bool | None = None,
     ) -> Product | None:
         """Validate and build a normalized Product."""
 
@@ -242,4 +252,6 @@ class LiderScraper:
             store=self.STORE_NAME,
             normalized_name=normalize_product_name(cleaned_name),
             image_url=cleaned_image_url,
+            page_available_hint=page_available_hint,
+            in_stock_hint=in_stock_hint,
         )

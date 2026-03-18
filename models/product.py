@@ -18,6 +18,8 @@ class Product:
     store: str
     normalized_name: str
     image_url: str = ""
+    page_available_hint: bool | None = None
+    in_stock_hint: bool | None = None
     discount_percentage: float = 0.0
     score: float = 0.0
 

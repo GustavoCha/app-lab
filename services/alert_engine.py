@@ -101,10 +101,16 @@ def run_alert_cycle(config: AppConfig) -> dict[str, int]:
                 aggregate_filter_stats.filtered_by_discount += 1
                 continue
             if product.product_id not in availability_cache:
-                store_scraper = scrapers.get(product.store)
-                if not store_scraper:
-                    continue
-                availability_cache[product.product_id] = store_scraper.get_product_page_state(product.url)
+                if product.page_available_hint is not None and product.in_stock_hint is not None:
+                    availability_cache[product.product_id] = (
+                        product.page_available_hint,
+                        product.in_stock_hint,
+                    )
+                else:
+                    store_scraper = scrapers.get(product.store)
+                    if not store_scraper:
+                        continue
+                    availability_cache[product.product_id] = store_scraper.get_product_page_state(product.url)
             page_available, in_stock = availability_cache[product.product_id]
             if not page_available:
                 continue

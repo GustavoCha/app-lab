@@ -612,6 +612,8 @@ class ParisScraper:
             store=self.STORE_NAME,
             normalized_name=normalize_product_name(cleaned_name),
             image_url=cleaned_image_url,
+            page_available_hint=None,
+            in_stock_hint=None,
         )
 
     def _extract_image_url_from_mapping(self, data: dict[str, Any]) -> str:
