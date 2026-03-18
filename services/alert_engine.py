@@ -75,6 +75,7 @@ def run_alert_cycle(config: AppConfig) -> dict[str, int]:
             min_discount=subscription.min_discount,
             min_price=config.min_price,
             allowed_categories=["tecnologia", "electrodomesticos", "bicicletas", "menaje", "ropa", "custom"],
+            search_query=subscription.search_query,
             include_keywords_any=subscription.include_keywords_any,
             include_keywords_all=subscription.include_keywords_all,
             exclude_keywords=subscription.exclude_keywords,

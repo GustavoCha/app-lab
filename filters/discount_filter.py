@@ -8,7 +8,68 @@ from dataclasses import asdict, dataclass
 from typing import Iterable
 
 from models.product import Product
-from utils.normalization import normalize_keywords
+from utils.normalization import normalize_keywords, normalize_product_name
+
+
+ACCESSORY_TERMS = {
+    "accesorio",
+    "adaptador",
+    "audifono",
+    "bolso",
+    "camara",
+    "cable",
+    "carcasa",
+    "case",
+    "control",
+    "cover",
+    "cuna",
+    "dock",
+    "estacion",
+    "estuche",
+    "funda",
+    "grip",
+    "headset",
+    "joystick",
+    "joy con",
+    "lamina",
+    "mica",
+    "microsd",
+    "memoria",
+    "protector",
+    "repuesto",
+    "soporte",
+    "stand",
+    "tarjeta",
+    "volante",
+}
+GAME_TERMS = {
+    "juego",
+    "game",
+    "mario kart",
+    "pokemon",
+    "zelda",
+    "fifa",
+    "fc26",
+    "minecraft",
+    "metroid",
+    "party",
+    "sonic",
+}
+CORE_PRODUCT_TERMS = {
+    "bundle",
+    "consola",
+    "pack",
+    "pre cargada",
+    "pre cargado",
+}
+CONSOLE_QUERY_TERMS = {
+    "nintendo switch",
+    "switch 2",
+    "playstation",
+    "ps5",
+    "ps4",
+    "xbox",
+}
 
 
 @dataclass(slots=True)
@@ -82,6 +143,7 @@ def filter_products(
     min_discount: float,
     min_price: int,
     allowed_categories: list[str],
+    search_query: str,
     include_keywords_any: list[str],
     include_keywords_all: list[str],
     exclude_keywords: list[str],
@@ -89,6 +151,7 @@ def filter_products(
     """Keep only products that match category, price, discount, and keywords."""
 
     allowed = {category.strip().lower() for category in allowed_categories}
+    normalized_query = normalize_product_name(search_query)
     include_any_terms = normalize_keywords(include_keywords_any)
     include_all_terms = normalize_keywords(include_keywords_all)
     exclude_terms = normalize_keywords(exclude_keywords)
@@ -109,6 +172,9 @@ def filter_products(
             continue
         if product.discount_percentage < min_discount:
             stats.filtered_by_discount += 1
+            continue
+        if _looks_like_accessory_or_related(product, normalized_query):
+            stats.filtered_by_keywords += 1
             continue
         if not _matches_keyword_rules(product, include_any_terms, include_all_terms, exclude_terms):
             stats.filtered_by_keywords += 1
@@ -136,6 +202,58 @@ def _matches_keyword_rules(
         return False
     if exclude_keywords and any(_keyword_matches(haystack, keyword) for keyword in exclude_keywords):
         return False
+    return True
+
+
+def _looks_like_accessory_or_related(product: Product, normalized_query: str) -> bool:
+    """Exclude obvious accessories/games unless the query explicitly asks for them."""
+
+    if not normalized_query:
+        return False
+
+    haystack = product.normalized_name
+    if _query_targets_console_hardware(normalized_query):
+        return _is_non_console_result_for_console_query(haystack, normalized_query)
+
+    query_wants_accessory = any(term in normalized_query for term in ACCESSORY_TERMS)
+    query_wants_game = any(term in normalized_query for term in GAME_TERMS)
+
+    if query_wants_accessory or query_wants_game:
+        return False
+
+    is_accessory = any(term in haystack for term in ACCESSORY_TERMS)
+    is_game = any(term in haystack for term in GAME_TERMS)
+    looks_like_core_product = any(term in haystack for term in CORE_PRODUCT_TERMS)
+
+    if looks_like_core_product:
+        return False
+
+    return is_accessory or is_game
+
+
+def _query_targets_console_hardware(normalized_query: str) -> bool:
+    """Detect searches that are clearly asking for a console rather than related products."""
+
+    if any(term in normalized_query for term in GAME_TERMS):
+        return False
+    return any(term in normalized_query for term in CONSOLE_QUERY_TERMS)
+
+
+def _is_non_console_result_for_console_query(haystack: str, normalized_query: str) -> bool:
+    """Keep only console hardware, bundles, or exact console matches for console queries."""
+
+    model_matches_query = normalized_query in haystack or "switch 2" in haystack
+    has_query_phrase = normalized_query in haystack
+    looks_like_console = any(term in haystack for term in CORE_PRODUCT_TERMS)
+    is_accessory = any(term in haystack for term in ACCESSORY_TERMS)
+    is_game = any(term in haystack for term in GAME_TERMS)
+
+    if looks_like_console and model_matches_query:
+        return False
+    if has_query_phrase and not is_game and not is_accessory:
+        return False
+    if is_accessory or is_game:
+        return True
     return True
 
 
