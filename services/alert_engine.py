@@ -90,9 +90,16 @@ def run_alert_cycle(config: AppConfig) -> dict[str, int]:
         )
         _merge_filter_stats(aggregate_filter_stats, filter_stats)
 
-        sent_product_ids = repository.get_sent_product_ids(subscription.user_id, subscription.id)
+        sent_alert_state = repository.get_sent_alert_state(subscription.user_id, subscription.id)
         ranked_products = sort_and_limit_products(
-            [product for product in filtered_products if product.product_id not in sent_product_ids],
+            [
+                product
+                for product in filtered_products
+                if (
+                    product.product_id not in sent_alert_state
+                    or product.discount_percentage > sent_alert_state[product.product_id]
+                )
+            ],
             len(filtered_products),
         )
 

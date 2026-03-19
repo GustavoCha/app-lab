@@ -56,9 +56,13 @@ create table if not exists public.sent_alerts (
     user_id uuid not null references public.users(id) on delete cascade,
     subscription_id bigint not null references public.subscriptions(id) on delete cascade,
     product_id text not null,
+    sent_discount_percentage numeric(6,2),
     sent_at timestamptz not null default timezone('utc', now()),
     unique (user_id, subscription_id, product_id)
 );
+
+alter table public.sent_alerts
+    add column if not exists sent_discount_percentage numeric(6,2);
 
 create table if not exists public.conversation_states (
     user_id uuid primary key references public.users(id) on delete cascade,

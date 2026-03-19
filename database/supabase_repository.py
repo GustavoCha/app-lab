@@ -228,8 +228,8 @@ class SupabaseRepository:
         )
         return {str(row["product_id"]): row for row in rows}
 
-    def get_sent_product_ids(self, user_id: str, subscription_id: int) -> set[str]:
-        """Return product ids already alerted for one subscription."""
+    def get_sent_alert_state(self, user_id: str, subscription_id: int) -> dict[str, float]:
+        """Return the last sent discount per product for one subscription."""
 
         rows = self._request(
             "GET",
@@ -237,10 +237,15 @@ class SupabaseRepository:
             params={
                 "user_id": f"eq.{user_id}",
                 "subscription_id": f"eq.{subscription_id}",
-                "select": "product_id",
+                "select": "product_id,sent_discount_percentage",
             },
         )
-        return {str(row["product_id"]) for row in rows}
+        result: dict[str, float] = {}
+        for row in rows:
+            product_id = str(row["product_id"])
+            sent_discount = row.get("sent_discount_percentage")
+            result[product_id] = float(sent_discount) if sent_discount is not None else 0.0
+        return result
 
     def record_sent_alert(self, user_id: str, subscription_id: int, product: Product) -> None:
         """Persist a sent alert entry."""
@@ -248,14 +253,17 @@ class SupabaseRepository:
         self._request(
             "POST",
             "sent_alerts",
+            params={"on_conflict": "user_id,subscription_id,product_id"},
             json_body=[
                 {
                     "user_id": user_id,
                     "subscription_id": subscription_id,
                     "product_id": product.product_id,
+                    "sent_discount_percentage": product.discount_percentage,
+                    "sent_at": datetime.now(timezone.utc).isoformat(),
                 }
             ],
-            prefer="return=minimal",
+            prefer="resolution=merge-duplicates,return=minimal",
         )
 
     def persist_products(
