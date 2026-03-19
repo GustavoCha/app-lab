@@ -36,6 +36,7 @@ jobs:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           MIN_DISCOUNT: ${{ secrets.MIN_DISCOUNT }}
           MAX_ALERTS_PER_RUN: ${{ secrets.MAX_ALERTS_PER_RUN }}
+          MAX_ALERTS_PER_USER_PER_STORE_PER_RUN: ${{ secrets.MAX_ALERTS_PER_USER_PER_STORE_PER_RUN }}
           REQUEST_TIMEOUT: ${{ secrets.REQUEST_TIMEOUT }}
           REQUEST_RETRIES: ${{ secrets.REQUEST_RETRIES }}
           REQUIRE_IN_STOCK: ${{ secrets.REQUIRE_IN_STOCK }}
