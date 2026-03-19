@@ -138,12 +138,51 @@ def run_alert_cycle(config: AppConfig) -> dict[str, int]:
 
     offers_found = len(ranked_alerts)
     alerts_sent_by_user_store: dict[tuple[str, str], int] = defaultdict(int)
+    sent_candidate_keys: set[tuple[int, str]] = set()
+
+    # First pass: guarantee one alert per subscription when possible.
+    candidates_by_subscription: dict[int, list[PendingAlert]] = defaultdict(list)
+    for candidate in ranked_alerts:
+        candidates_by_subscription[candidate.subscription.id].append(candidate)
+
+    prioritized_subscriptions = sorted(
+        candidates_by_subscription.values(),
+        key=lambda candidates: (
+            candidates[0].product.score,
+            candidates[0].product.discount_percentage,
+            candidates[0].product.price_before,
+        ),
+        reverse=True,
+    )
+
+    for candidates in prioritized_subscriptions:
+        if alerts_sent >= config.max_alerts_per_run:
+            break
+
+        selected_candidate = _pick_first_sendable_candidate(
+            candidates=candidates,
+            alerts_sent_by_user_store=alerts_sent_by_user_store,
+            config=config,
+        )
+        if not selected_candidate:
+            continue
+        if _send_candidate_alert(selected_candidate, notifier, repository):
+            alerts_sent += 1
+            sent_candidate_keys.add((selected_candidate.subscription.id, selected_candidate.product.product_id))
+            alerts_sent_by_user_store[
+                (selected_candidate.subscription.user_id, selected_candidate.product.store)
+            ] += 1
+
+    # Second pass: fill the remaining capacity by global ranking.
     for candidate in ranked_alerts:
         if alerts_sent >= config.max_alerts_per_run:
             break
 
         subscription = candidate.subscription
         product = candidate.product
+        candidate_key = (subscription.id, product.product_id)
+        if candidate_key in sent_candidate_keys:
+            continue
         user_store_key = (subscription.user_id, product.store)
         if (
             alerts_sent_by_user_store[user_store_key]
@@ -154,8 +193,7 @@ def run_alert_cycle(config: AppConfig) -> dict[str, int]:
             aggregate_filter_stats.filtered_by_discount += 1
             continue
 
-        if notifier.send_product_alert(subscription.telegram_chat_id, product, subscription.label):
-            repository.record_sent_alert(subscription.user_id, subscription.id, product)
+        if _send_candidate_alert(candidate, notifier, repository):
             alerts_sent += 1
             alerts_sent_by_user_store[user_store_key] += 1
 
@@ -194,3 +232,35 @@ def _merge_filter_stats(target: FilterStats, source: FilterStats) -> None:
 
     for field_name, value in source.to_dict().items():
         setattr(target, field_name, getattr(target, field_name) + value)
+
+
+def _pick_first_sendable_candidate(
+    candidates: list[PendingAlert],
+    alerts_sent_by_user_store: dict[tuple[str, str], int],
+    config: AppConfig,
+) -> PendingAlert | None:
+    """Return the first candidate in a subscription that still fits the store quota."""
+
+    for candidate in candidates:
+        user_store_key = (candidate.subscription.user_id, candidate.product.store)
+        if (
+            alerts_sent_by_user_store[user_store_key]
+            < config.max_alerts_per_user_per_store_per_run
+        ):
+            return candidate
+    return None
+
+
+def _send_candidate_alert(
+    candidate: PendingAlert,
+    notifier: TelegramNotifier,
+    repository: SupabaseRepository,
+) -> bool:
+    """Send and persist a single alert candidate."""
+
+    subscription = candidate.subscription
+    product = candidate.product
+    if notifier.send_product_alert(subscription.telegram_chat_id, product, subscription.label):
+        repository.record_sent_alert(subscription.user_id, subscription.id, product)
+        return True
+    return False
