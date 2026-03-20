@@ -218,14 +218,18 @@ class SupabaseRepository:
         if not product_ids:
             return {}
 
-        rows = self._request(
-            "GET",
-            "products",
-            params={
-                "product_id": self._format_in_filter(product_ids),
-                "select": "product_id,historical_min_price,last_price_now,last_in_stock",
-            },
-        )
+        rows: list[dict[str, Any]] = []
+        for batch in self._chunked(product_ids, 250):
+            rows.extend(
+                self._request(
+                    "GET",
+                    "products",
+                    params={
+                        "product_id": self._format_in_filter(batch),
+                        "select": "product_id,historical_min_price,last_price_now,last_in_stock",
+                    },
+                )
+            )
         return {str(row["product_id"]): row for row in rows}
 
     def get_sent_alert_state(self, user_id: str, subscription_id: int) -> dict[str, float]:
@@ -314,19 +318,21 @@ class SupabaseRepository:
                 }
             )
 
-        self._request(
-            "POST",
-            "products",
-            params={"on_conflict": "product_id", "select": "product_id"},
-            json_body=product_rows,
-            prefer="resolution=merge-duplicates,return=minimal",
-        )
-        self._request(
-            "POST",
-            "price_history",
-            json_body=history_rows,
-            prefer="return=minimal",
-        )
+        for batch in self._chunked_records(product_rows, 50):
+            self._request(
+                "POST",
+                "products",
+                params={"on_conflict": "product_id", "select": "product_id"},
+                json_body=batch,
+                prefer="resolution=merge-duplicates,return=minimal",
+            )
+        for batch in self._chunked_records(history_rows, 100):
+            self._request(
+                "POST",
+                "price_history",
+                json_body=batch,
+                prefer="return=minimal",
+            )
 
     def _request(
         self,
@@ -370,3 +376,18 @@ class SupabaseRepository:
 
         encoded = ",".join(value for value in values)
         return f"in.({encoded})"
+
+    @staticmethod
+    def _chunked(values: list[str], batch_size: int) -> list[list[str]]:
+        """Split large lists into smaller PostgREST-friendly batches."""
+
+        return [values[index:index + batch_size] for index in range(0, len(values), batch_size)]
+
+    @staticmethod
+    def _chunked_records(
+        values: list[dict[str, object]],
+        batch_size: int,
+    ) -> list[list[dict[str, object]]]:
+        """Split large write payloads into smaller Supabase-friendly batches."""
+
+        return [values[index:index + batch_size] for index in range(0, len(values), batch_size)]

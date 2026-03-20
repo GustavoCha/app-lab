@@ -1,6 +1,6 @@
 # discount-alert-bot
 
-Bot multiusuario para detectar ofertas en tiendas como `paris.cl` y `lider.cl` y enviar alertas personalizadas por Telegram usando infraestructura gratuita:
+Bot multiusuario para detectar ofertas en tiendas como `paris.cl`, `lider.cl` y `falabella.com` y enviar alertas personalizadas por Telegram usando infraestructura gratuita:
 
 - `Vercel` para webhook + cron
 - `Supabase` para base de datos
@@ -14,6 +14,7 @@ Bot multiusuario para detectar ofertas en tiendas como `paris.cl` y `lider.cl` y
 - `database/supabase_repository.py`: acceso a Supabase
 - `scraper/paris_scraper.py`: scraper de Paris
 - `scraper/lider_scraper.py`: scraper de Lider
+- `scraper/falabella_scraper.py`: scraper de Falabella
 - `supabase/schema.sql`: esquema SQL
 
 ## Que soporta ahora
@@ -70,6 +71,8 @@ Copia `.env.example` a `.env` en local.
 - `CRON_SECRET`
 - `MIN_DISCOUNT`
 - `MAX_ALERTS_PER_RUN`
+- `MAX_ALERTS_PER_USER_PER_RUN`
+- `MAX_ALERTS_PER_USER_PER_STORE_PER_RUN`
 - `REQUEST_TIMEOUT`
 - `REQUEST_RETRIES`
 - `REQUIRE_IN_STOCK`
@@ -159,7 +162,7 @@ Eso ejecuta un ciclo de scraping y matching usando Supabase.
 
 ## Limitaciones actuales
 
-- `paris.cl` y `lider.cl` estan activos
+- `paris.cl`, `lider.cl` y `falabella.com` estan activos
 - las suscripciones son por texto, no por UI web
 - el bot no tiene comandos de pausa/edicion todavia
 - el scraper depende de la estructura actual de Paris

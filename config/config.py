@@ -26,7 +26,8 @@ class AppConfig:
     min_discount: float = 60.0
     min_price: int = 30000
     max_alerts_per_run: int = 100
-    max_alerts_per_user_per_store_per_run: int = 5
+    max_alerts_per_user_per_run: int = 15
+    max_alerts_per_user_per_store_per_run: int = 15
     request_timeout: int = 20
     request_retries: int = 3
     require_in_stock: bool = True
@@ -122,8 +123,9 @@ def load_config() -> AppConfig:
         min_discount=float(os.getenv("MIN_DISCOUNT", "60")),
         min_price=int(os.getenv("MIN_PRICE", "30000")),
         max_alerts_per_run=int(os.getenv("MAX_ALERTS_PER_RUN", "100")),
+        max_alerts_per_user_per_run=int(os.getenv("MAX_ALERTS_PER_USER_PER_RUN", "15")),
         max_alerts_per_user_per_store_per_run=int(
-            os.getenv("MAX_ALERTS_PER_USER_PER_STORE_PER_RUN", "5")
+            os.getenv("MAX_ALERTS_PER_USER_PER_STORE_PER_RUN", "15")
         ),
         request_timeout=int(os.getenv("REQUEST_TIMEOUT", "20")),
         request_retries=int(os.getenv("REQUEST_RETRIES", "3")),

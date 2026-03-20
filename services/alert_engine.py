@@ -18,6 +18,7 @@ from filters.discount_filter import (
 from models.product import Product
 from models.subscription import Subscription
 from notifier.telegram_notifier import TelegramNotifier
+from scraper.falabella_scraper import FalabellaScraper
 from scraper.lider_scraper import LiderScraper
 from scraper.paris_scraper import ParisScraper
 
@@ -41,6 +42,7 @@ def run_alert_cycle(config: AppConfig) -> dict[str, int]:
     scrapers = {
         "paris": ParisScraper(config),
         "lider": LiderScraper(config),
+        "falabella": FalabellaScraper(config),
     }
 
     subscriptions = repository.get_active_subscriptions()
@@ -138,6 +140,7 @@ def run_alert_cycle(config: AppConfig) -> dict[str, int]:
 
     offers_found = len(ranked_alerts)
     alerts_sent_by_user_store: dict[tuple[str, str], int] = defaultdict(int)
+    alerts_sent_by_user: dict[str, int] = defaultdict(int)
     sent_candidate_keys: set[tuple[int, str]] = set()
 
     # First pass: guarantee one alert per subscription when possible.
@@ -161,6 +164,7 @@ def run_alert_cycle(config: AppConfig) -> dict[str, int]:
 
         selected_candidate = _pick_first_sendable_candidate(
             candidates=candidates,
+            alerts_sent_by_user=alerts_sent_by_user,
             alerts_sent_by_user_store=alerts_sent_by_user_store,
             config=config,
         )
@@ -169,6 +173,7 @@ def run_alert_cycle(config: AppConfig) -> dict[str, int]:
         if _send_candidate_alert(selected_candidate, notifier, repository):
             alerts_sent += 1
             sent_candidate_keys.add((selected_candidate.subscription.id, selected_candidate.product.product_id))
+            alerts_sent_by_user[selected_candidate.subscription.user_id] += 1
             alerts_sent_by_user_store[
                 (selected_candidate.subscription.user_id, selected_candidate.product.store)
             ] += 1
@@ -183,6 +188,8 @@ def run_alert_cycle(config: AppConfig) -> dict[str, int]:
         candidate_key = (subscription.id, product.product_id)
         if candidate_key in sent_candidate_keys:
             continue
+        if alerts_sent_by_user[subscription.user_id] >= config.max_alerts_per_user_per_run:
+            continue
         user_store_key = (subscription.user_id, product.store)
         if (
             alerts_sent_by_user_store[user_store_key]
@@ -195,6 +202,7 @@ def run_alert_cycle(config: AppConfig) -> dict[str, int]:
 
         if _send_candidate_alert(candidate, notifier, repository):
             alerts_sent += 1
+            alerts_sent_by_user[subscription.user_id] += 1
             alerts_sent_by_user_store[user_store_key] += 1
 
     repository.persist_products(
@@ -236,12 +244,15 @@ def _merge_filter_stats(target: FilterStats, source: FilterStats) -> None:
 
 def _pick_first_sendable_candidate(
     candidates: list[PendingAlert],
+    alerts_sent_by_user: dict[str, int],
     alerts_sent_by_user_store: dict[tuple[str, str], int],
     config: AppConfig,
 ) -> PendingAlert | None:
     """Return the first candidate in a subscription that still fits the store quota."""
 
     for candidate in candidates:
+        if alerts_sent_by_user[candidate.subscription.user_id] >= config.max_alerts_per_user_per_run:
+            continue
         user_store_key = (candidate.subscription.user_id, candidate.product.store)
         if (
             alerts_sent_by_user_store[user_store_key]
