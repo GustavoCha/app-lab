@@ -70,6 +70,10 @@ CONSOLE_QUERY_TERMS = {
     "ps4",
     "xbox",
 }
+KEYWORD_TOKEN_EQUIVALENTS = {
+    "televisor": {"televisor", "tv"},
+    "tv": {"televisor", "tv"},
+}
 
 
 @dataclass(slots=True)
@@ -261,9 +265,32 @@ def _keyword_matches(haystack: str, keyword: str) -> bool:
     """Match normalized words or phrases against the normalized product name."""
 
     normalized = " ".join(keyword.strip().split())
-    if not normalized:
+    if not normalized or not haystack:
         return False
-    return normalized in haystack
+
+    haystack_tokens = haystack.split()
+    keyword_tokens = normalized.split()
+    if not keyword_tokens:
+        return False
+
+    if len(keyword_tokens) == 1:
+        token = keyword_tokens[0]
+        equivalents = KEYWORD_TOKEN_EQUIVALENTS.get(token, {token})
+        return any(haystack_token in equivalents for haystack_token in haystack_tokens)
+
+    normalized_haystack = " ".join(haystack_tokens)
+    normalized_keyword = " ".join(keyword_tokens)
+    if normalized_keyword in normalized_haystack:
+        return True
+
+    for start in range(0, len(haystack_tokens) - len(keyword_tokens) + 1):
+        window = haystack_tokens[start:start + len(keyword_tokens)]
+        if all(
+            window_token in KEYWORD_TOKEN_EQUIVALENTS.get(keyword_token, {keyword_token})
+            for window_token, keyword_token in zip(window, keyword_tokens)
+        ):
+            return True
+    return False
 
 
 def sort_and_limit_products(products: Iterable[Product], limit: int) -> list[Product]:
