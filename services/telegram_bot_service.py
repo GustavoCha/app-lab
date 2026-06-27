@@ -25,6 +25,8 @@ class TelegramBotService:
 
     MENU_ADD = "Agregar alerta"
     MENU_LIST = "Ver mis alertas"
+    MENU_PAUSE = "Pausar alerta"
+    MENU_EDIT = "Editar alerta"
     MENU_DELETE = "Eliminar alerta"
     MENU_HELP = "Ayuda"
     MENU_CANCEL = "Cancelar"
@@ -113,6 +115,70 @@ class TelegramBotService:
 
             self._create_subscription_from_parsed(chat_id, user_id, parsed)
             return {"ok": True}
+        if command == "/pause":
+            if not command_payload.strip().isdigit():
+                self.notifier.send_message(chat_id, "Uso: /pause 12", reply_markup=self._main_menu_markup())
+                return {"ok": True}
+            subscription_id = int(command_payload.strip())
+            self._toggle_pause_subscription(chat_id, user_id, subscription_id, pause=True)
+            return {"ok": True}
+        if command == "/resume":
+            if not command_payload.strip().isdigit():
+                self.notifier.send_message(chat_id, "Uso: /resume 12", reply_markup=self._main_menu_markup())
+                return {"ok": True}
+            subscription_id = int(command_payload.strip())
+            self._toggle_pause_subscription(chat_id, user_id, subscription_id, pause=False)
+            return {"ok": True}
+        if command == "/edit":
+            if not command_payload.strip():
+                subscriptions = self.repository.list_user_subscriptions(user_id)
+                if not subscriptions:
+                    self.notifier.send_message(
+                        chat_id,
+                        "No tienes suscripciones activas.",
+                        reply_markup=self._main_menu_markup(),
+                    )
+                    return {"ok": True}
+                self.repository.upsert_conversation_state(
+                    user_id=user_id,
+                    flow="edit_subscription",
+                    step="pick_id",
+                    payload={},
+                )
+                self.notifier.send_message(
+                    chat_id,
+                    "Uso: /edit <id>\n\nEscribe el numero de la suscripcion que deseas editar.",
+                    reply_markup=self._edit_selection_markup(user_id),
+                )
+                return {"ok": True}
+            if not command_payload.strip().isdigit():
+                self.notifier.send_message(chat_id, "Uso: /edit 12", reply_markup=self._main_menu_markup())
+                return {"ok": True}
+            subscription_id = int(command_payload.strip())
+            sub = self.repository.get_subscription(user_id, subscription_id)
+            if not sub:
+                self.notifier.send_message(
+                    chat_id,
+                    f"No encontre la suscripcion #{subscription_id}.",
+                    reply_markup=self._main_menu_markup(),
+                )
+                return {"ok": True}
+            self.repository.upsert_conversation_state(
+                user_id=user_id,
+                flow="edit_subscription",
+                step="pick_field",
+                payload={"subscription_id": subscription_id},
+            )
+            self.notifier.send_message(
+                chat_id,
+                f"Editando suscripcion #{subscription_id}.\n\n"
+                "Que deseas cambiar?\n"
+                "- Escribe 'descuento' para cambiar el descuento minimo\n"
+                "- Escribe 'excluir' para cambiar las palabras a excluir\n"
+                "- Escribe 'Cancelar' para salir",
+                reply_markup=self._edit_field_markup(),
+            )
+            return {"ok": True}
 
         if normalized_text == self.MENU_ADD.casefold():
             self.repository.upsert_conversation_state(
@@ -129,6 +195,50 @@ class TelegramBotService:
             return {"ok": True}
         if normalized_text == self.MENU_LIST.casefold():
             self._send_subscription_list(chat_id, user_id)
+            return {"ok": True}
+        if normalized_text == self.MENU_PAUSE.casefold():
+            subscriptions = self.repository.list_user_subscriptions(user_id)
+            if not subscriptions:
+                self.notifier.send_message(
+                    chat_id,
+                    "No tienes suscripciones activas.",
+                    reply_markup=self._main_menu_markup(),
+                )
+                return {"ok": True}
+            self.repository.upsert_conversation_state(
+                user_id=user_id,
+                flow="pause_subscription",
+                step="pick_id",
+                payload={},
+            )
+            self._send_subscription_list(
+                chat_id,
+                user_id,
+                prefix="Escribe el numero de la suscripcion que deseas pausar o reanudar.",
+                reply_markup=self._pause_selection_markup(user_id),
+            )
+            return {"ok": True}
+        if normalized_text == self.MENU_EDIT.casefold():
+            subscriptions = self.repository.list_user_subscriptions(user_id)
+            if not subscriptions:
+                self.notifier.send_message(
+                    chat_id,
+                    "No tienes suscripciones activas.",
+                    reply_markup=self._main_menu_markup(),
+                )
+                return {"ok": True}
+            self.repository.upsert_conversation_state(
+                user_id=user_id,
+                flow="edit_subscription",
+                step="pick_id",
+                payload={},
+            )
+            self._send_subscription_list(
+                chat_id,
+                user_id,
+                prefix="Escribe el numero de la suscripcion que deseas editar.",
+                reply_markup=self._edit_selection_markup(user_id),
+            )
             return {"ok": True}
         if normalized_text == self.MENU_DELETE.casefold():
             subscriptions = self.repository.list_user_subscriptions(user_id)
@@ -172,6 +282,10 @@ class TelegramBotService:
             return self._handle_create_subscription_flow(chat_id, user_id, text, state)
         if state.flow == "delete_subscription":
             return self._handle_delete_subscription_flow(chat_id, user_id, text)
+        if state.flow == "pause_subscription":
+            return self._handle_pause_subscription_flow(chat_id, user_id, text)
+        if state.flow == "edit_subscription":
+            return self._handle_edit_subscription_flow(chat_id, user_id, text, state)
 
         self.repository.clear_conversation_state(user_id)
         self.notifier.send_message(chat_id, "Reinicie la conversacion. Intenta de nuevo.", reply_markup=self._main_menu_markup())
@@ -286,6 +400,209 @@ class TelegramBotService:
         )
         return {"ok": True}
 
+    def _toggle_pause_subscription(
+        self,
+        chat_id: str,
+        user_id: str,
+        subscription_id: int,
+        pause: bool,
+    ) -> None:
+        """Pause or resume a subscription."""
+
+        updated = self.repository.update_subscription(
+            user_id=user_id,
+            subscription_id=subscription_id,
+            updates={"enabled": not pause},
+        )
+        action = "pausada" if pause else "reanudada"
+        if updated:
+            self.notifier.send_message(
+                chat_id,
+                f"Suscripcion #{subscription_id} {action}.",
+                reply_markup=self._main_menu_markup(),
+            )
+        else:
+            self.notifier.send_message(
+                chat_id,
+                f"No encontre la suscripcion #{subscription_id}.",
+                reply_markup=self._main_menu_markup(),
+            )
+
+    def _handle_pause_subscription_flow(
+        self,
+        chat_id: str,
+        user_id: str,
+        text: str,
+    ) -> dict[str, object]:
+        """Pause or resume a subscription after the user picks an id."""
+
+        if not text.strip().isdigit():
+            self.notifier.send_message(
+                chat_id,
+                "Escribe solo el numero de la suscripcion.",
+                reply_markup=self._pause_selection_markup(user_id),
+            )
+            return {"ok": True}
+
+        subscription_id = int(text.strip())
+        sub = self.repository.get_subscription(user_id, subscription_id)
+        if not sub:
+            self.notifier.send_message(
+                chat_id,
+                f"No encontre la suscripcion #{subscription_id}.",
+                reply_markup=self._main_menu_markup(),
+            )
+            self.repository.clear_conversation_state(user_id)
+            return {"ok": True}
+
+        current_enabled = bool(sub.get("enabled", True))
+        self._toggle_pause_subscription(chat_id, user_id, subscription_id, pause=current_enabled)
+        self.repository.clear_conversation_state(user_id)
+        return {"ok": True}
+
+    def _handle_edit_subscription_flow(
+        self,
+        chat_id: str,
+        user_id: str,
+        text: str,
+        state: ConversationState,
+    ) -> dict[str, object]:
+        """Edit subscription fields through a conversational flow."""
+
+        payload = dict(state.payload)
+        subscription_id = int(payload.get("subscription_id", 0))
+
+        if state.step == "pick_id":
+            if not text.strip().isdigit():
+                self.notifier.send_message(
+                    chat_id,
+                    "Escribe solo el numero de la suscripcion.",
+                    reply_markup=self._edit_selection_markup(user_id),
+                )
+                return {"ok": True}
+
+            sub_id = int(text.strip())
+            sub = self.repository.get_subscription(user_id, sub_id)
+            if not sub:
+                self.notifier.send_message(
+                    chat_id,
+                    f"No encontre la suscripcion #{sub_id}.",
+                    reply_markup=self._main_menu_markup(),
+                )
+                self.repository.clear_conversation_state(user_id)
+                return {"ok": True}
+
+            self.repository.upsert_conversation_state(
+                user_id=user_id,
+                flow="edit_subscription",
+                step="pick_field",
+                payload={"subscription_id": sub_id},
+            )
+            self.notifier.send_message(
+                chat_id,
+                f"Editando suscripcion #{sub_id}.\n\n"
+                "Que deseas cambiar?\n"
+                "- Escribe 'descuento' para cambiar el descuento minimo\n"
+                "- Escribe 'excluir' para cambiar las palabras a excluir\n"
+                "- Escribe 'Cancelar' para salir",
+                reply_markup=self._edit_field_markup(),
+            )
+            return {"ok": True}
+
+        if state.step == "pick_field":
+            normalized = text.strip().lower()
+            if normalized in ("descuento", "min", "min_discount"):
+                self.repository.upsert_conversation_state(
+                    user_id=user_id,
+                    flow="edit_subscription",
+                    step="min_discount",
+                    payload=payload,
+                )
+                self.notifier.send_message(
+                    chat_id,
+                    f"Nuevo descuento minimo para #{subscription_id}?\n"
+                    "Escribe solo un numero, por ejemplo 25.",
+                    reply_markup=self._discount_markup(),
+                )
+                return {"ok": True}
+            if normalized in ("excluir", "exclude", "exclude_keywords"):
+                self.repository.upsert_conversation_state(
+                    user_id=user_id,
+                    flow="edit_subscription",
+                    step="exclude_keywords",
+                    payload=payload,
+                )
+                self.notifier.send_message(
+                    chat_id,
+                    "Nuevas palabras a excluir?\n"
+                    "Escribe palabras separadas por coma o 'ninguna'.",
+                    reply_markup=self._exclude_markup(),
+                )
+                return {"ok": True}
+
+            self.notifier.send_message(
+                chat_id,
+                "Opcion no valida. Elige 'descuento' o 'excluir'.",
+                reply_markup=self._edit_field_markup(),
+            )
+            return {"ok": True}
+
+        if state.step == "min_discount":
+            try:
+                new_min_discount = float(text.strip().replace(",", "."))
+            except ValueError:
+                self.notifier.send_message(
+                    chat_id,
+                    "Escribe un numero valido. Ejemplo: 25",
+                    reply_markup=self._discount_markup(),
+                )
+                return {"ok": True}
+
+            updated = self.repository.update_subscription(
+                user_id=user_id,
+                subscription_id=subscription_id,
+                updates={"min_discount": new_min_discount},
+            )
+            self.repository.clear_conversation_state(user_id)
+            self.notifier.send_message(
+                chat_id,
+                f"Suscripcion #{subscription_id} actualizada: descuento minimo ahora es {new_min_discount}%."
+                if updated
+                else f"No encontre la suscripcion #{subscription_id}.",
+                reply_markup=self._main_menu_markup(),
+            )
+            return {"ok": True}
+
+        if state.step == "exclude_keywords":
+            raw_value = text.strip()
+            exclude = []
+            if raw_value.casefold() not in {
+                self.MENU_SKIP_EXCLUDE.casefold(),
+                "ninguno",
+                "no",
+                "-",
+            }:
+                exclude = [item.strip() for item in raw_value.split(",") if item.strip()]
+
+            updated = self.repository.update_subscription(
+                user_id=user_id,
+                subscription_id=subscription_id,
+                updates={"exclude_keywords": exclude},
+            )
+            self.repository.clear_conversation_state(user_id)
+            self.notifier.send_message(
+                chat_id,
+                f"Suscripcion #{subscription_id} actualizada: palabras a excluir actualizadas."
+                if updated
+                else f"No encontre la suscripcion #{subscription_id}.",
+                reply_markup=self._main_menu_markup(),
+            )
+            return {"ok": True}
+
+        self.repository.clear_conversation_state(user_id)
+        self.notifier.send_message(chat_id, "No pude continuar la edicion.", reply_markup=self._main_menu_markup())
+        return {"ok": True}
+
     def _create_subscription_from_parsed(
         self,
         chat_id: str,
@@ -337,9 +654,11 @@ class TelegramBotService:
 
         lines = [prefix]
         for subscription in subscriptions:
+            enabled = bool(subscription.get("enabled", True))
+            status = "" if enabled else " [PAUSADA]"
             lines.append(
                 f"#{subscription['id']} - {subscription.get('label') or subscription['search_query']} "
-                f"(min {subscription.get('min_discount', self.config.min_discount)}%)"
+                f"(min {subscription.get('min_discount', self.config.min_discount)}%){status}"
             )
         self.notifier.send_message(chat_id, "\n".join(lines), reply_markup=reply_markup or self._main_menu_markup())
 
@@ -362,6 +681,7 @@ class TelegramBotService:
         return {
             "keyboard": [
                 [{"text": self.MENU_ADD}, {"text": self.MENU_LIST}],
+                [{"text": self.MENU_PAUSE}, {"text": self.MENU_EDIT}],
                 [{"text": self.MENU_DELETE}, {"text": self.MENU_HELP}],
             ],
             "resize_keyboard": True,
@@ -412,6 +732,42 @@ class TelegramBotService:
         id_buttons.append([{"text": self.MENU_CANCEL}])
         return {
             "keyboard": id_buttons,
+            "resize_keyboard": True,
+            "is_persistent": True,
+        }
+
+    def _pause_selection_markup(self, user_id: str) -> dict[str, object]:
+        """Return buttons with the user's subscription ids for pause/resume."""
+
+        subscriptions = self.repository.list_user_subscriptions(user_id)
+        id_buttons = [[{"text": str(subscription["id"])}] for subscription in subscriptions[:8]]
+        id_buttons.append([{"text": self.MENU_CANCEL}])
+        return {
+            "keyboard": id_buttons,
+            "resize_keyboard": True,
+            "is_persistent": True,
+        }
+
+    def _edit_selection_markup(self, user_id: str) -> dict[str, object]:
+        """Return buttons with the user's subscription ids for editing."""
+
+        subscriptions = self.repository.list_user_subscriptions(user_id)
+        id_buttons = [[{"text": str(subscription["id"])}] for subscription in subscriptions[:8]]
+        id_buttons.append([{"text": self.MENU_CANCEL}])
+        return {
+            "keyboard": id_buttons,
+            "resize_keyboard": True,
+            "is_persistent": True,
+        }
+
+    def _edit_field_markup(self) -> dict[str, object]:
+        """Return field selection buttons for editing a subscription."""
+
+        return {
+            "keyboard": [
+                [{"text": "Descuento"}, {"text": "Excluir"}],
+                [{"text": self.MENU_CANCEL}],
+            ],
             "resize_keyboard": True,
             "is_persistent": True,
         }

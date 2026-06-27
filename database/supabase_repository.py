@@ -106,6 +106,41 @@ class SupabaseRepository:
             },
         )
 
+    def get_subscription(self, user_id: str, subscription_id: int) -> dict[str, object] | None:
+        """Return one subscription owned by a user."""
+
+        rows = self._request(
+            "GET",
+            "subscriptions",
+            params={
+                "id": f"eq.{subscription_id}",
+                "user_id": f"eq.{user_id}",
+                "select": "*",
+            },
+        )
+        return rows[0] if rows else None
+
+    def update_subscription(
+        self,
+        user_id: str,
+        subscription_id: int,
+        updates: dict[str, object],
+    ) -> bool:
+        """Update fields on a subscription owned by a user."""
+
+        rows = self._request(
+            "PATCH",
+            "subscriptions",
+            params={
+                "id": f"eq.{subscription_id}",
+                "user_id": f"eq.{user_id}",
+                "select": "id",
+            },
+            json_body=updates,
+            prefer="return=representation",
+        )
+        return bool(rows)
+
     def delete_subscription(self, user_id: str, subscription_id: int) -> bool:
         """Delete one subscription owned by a user."""
 
