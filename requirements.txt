@@ -3,3 +3,5 @@ beautifulsoup4
 python-dotenv
 Flask
 curl_cffi
+pytest>=7.0
+pytest-cov>=4.0
