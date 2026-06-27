@@ -21,6 +21,7 @@ from notifier.telegram_notifier import TelegramNotifier
 from scraper.falabella_scraper import FalabellaScraper
 from scraper.lider_scraper import LiderScraper
 from scraper.paris_scraper import ParisScraper
+from scraper.ripley_scraper import RipleyScraper
 
 
 LOGGER = logging.getLogger(__name__)
@@ -43,6 +44,7 @@ def run_alert_cycle(config: AppConfig) -> dict[str, int]:
         "paris": ParisScraper(config),
         "lider": LiderScraper(config),
         "falabella": FalabellaScraper(config),
+        "ripley": RipleyScraper(config),
     }
 
     subscriptions = repository.get_active_subscriptions()
